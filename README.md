@@ -326,6 +326,22 @@ $ curl -X POST http://127.0.0.1:5000/ping -H "Content-Type: application/json" -d
 
 ---
 
+### Note for next unit
+
+`scenarios.py` is filled in for four of the five criteria, which are score
+spread, label coverage, the appeal path and bad input. Criterion 4 cannot be
+expressed as text alone, since an appeal needs a `content_id` that a submission
+returned, so those submissions produce the ids and the appeals themselves are
+run by hand with curl.
+
+Scenario 1 is still a placeholder, and that is deliberate. Criterion 1 is about
+ten pieces I wrote myself, and filling it with anything else would make the
+criterion measure prose that is not mine. On a dry run of the rest, the score
+spread came out at 0.443 against a target of 0.25, and all three labels appeared
+at 0.8078, 0.5532 and 0.2626.
+
+---
+
 ## How I Used AI
 
 **Moment 1**

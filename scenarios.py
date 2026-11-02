@@ -1,70 +1,79 @@
 """
 What your test runs. ← UNIT 8, MILESTONE 3
 
-Each of your five criteria needs something run against it. A criterion about
-false positives needs your own writing. One about label coverage needs inputs
-across the score range. One about the appeal path needs a real content_id.
+Five scenarios, one per criterion. `run_eval.py` runs everything here three
+times, which is what the three-trial rule in criteria.md needs.
 
-Working that out is Milestone 3's first step, and this file is where you write
-it down. `run_eval.py` runs everything here three times.
+⚠️ Scenario 1 is the one slot nothing else can fill. Criterion 1 is about MY
+own writing, so it has to be ten paragraphs I actually wrote. The placeholders
+are still there on purpose, because filling them with text from anywhere else
+would make the criterion measure something other than what it says.
 
-Two are filled in as examples. Replace them with what your criteria actually
-need — these are a shape, not a set.
-
-A scenario carries **either** of these:
-
-    "texts"   a list of strings. Each is sent as {"text": ..., "creator_id": ...}
-              with a creator_id made up for you. Use this for most criteria.
-
-    "bodies"  a list of whole request bodies, sent exactly as written. Use this
-              when the malformed request IS the point — empty text, no `text`
-              field at all, something enormous. A bad-input criterion needs it,
-              because you cannot express "the field is missing" as a string.
+The human samples in scenarios 2 and 3 are real forum comments from the
+RaceFans comment sections, collected for project 3. They are genuinely
+human-written, which is what those two criteria need, and they are not mine,
+which is why they are not in scenario 1.
 """
 
 SCENARIOS = [
     {
         "name": "my own writing",
         "criterion": 1,
-        # ⚠️ PUT YOUR OWN WRITING HERE. Not AI text, not a sample from the web —
-        # things you actually wrote. This is the criterion that matters most and
-        # it's meaningless with someone else's prose.
+        # TEN PARAGRAPHS I WROTE MYSELF GO HERE. Anything else and criterion 1
+        # is measuring somebody else's prose.
         "texts": [
-            "REPLACE ME with a paragraph you wrote yourself.",
-            "REPLACE ME with another one. Ten pieces is the usual number.",
+            "REPLACE ME with a paragraph I wrote myself, at least 120 characters.",
         ],
     },
     {
-        "name": "label coverage",
+        "name": "score spread, clearly AI against clearly human",
         "criterion": 2,
-        # Inputs spread across your score range, so you can check all three
-        # labels are actually reachable.
         "texts": [
-            "REPLACE ME with something you're confident is AI-generated.",
-            "REPLACE ME with something you're confident is human-written.",
-            "REPLACE ME with something genuinely borderline.",
+            'The introduction of a revised cost cap represents a significant development for the sport. It is important to note that financial regulations serve several key purposes, including the promotion of competitive balance and the long-term sustainability of participating organisations. Furthermore, teams must carefully allocate their resources in order to maximise performance within the established constraints. Overall, while the policy has been subject to criticism, it is widely regarded as a positive step forward.',
+            'There are a number of important factors to consider when evaluating tyre strategy. First, track temperature has a considerable influence on degradation rates across a race distance. Additionally, the selection of compound must be balanced against the anticipated number of pit stops. Moreover, teams frequently adjust their approach in response to changing conditions. In conclusion, effective tyre management remains an essential component of overall race performance.',
+            "Driver development programmes play a crucial role in the modern motorsport landscape. These initiatives are designed to identify promising talent at an early stage and provide structured support throughout a driver's career. It should be noted that such programmes require substantial investment from the organisations involved. Nevertheless, the benefits are considerable, as a well-prepared driver contributes significantly to the overall success of the team.",
+            "The question of race calendar expansion has generated considerable discussion among stakeholders. On the one hand, additional events increase commercial revenue and broaden the sport's global reach. On the other hand, a longer season places additional demands on personnel and logistics. It is therefore essential that the governing body carefully weighs these competing priorities before finalising any future schedule.",
+            'Aerodynamic regulations have undergone a series of important revisions in recent years. The primary objective of these changes is to reduce the turbulent air generated by the leading car, thereby improving the opportunity for overtaking. Additionally, the regulations aim to limit development costs through standardised components. Overall, the impact of these measures continues to be assessed by teams and observers alike.',
+            'I was there. Great event, these cars are awesome and they sound glorious which is not something you say as often in Motorsport these days. Hopefully next time, if they ever come back and I hope they will, they announce it better because it wasn’t sold out although the weather warning we had before the weekend didn’t help, surely',
+            'The amount of overspend that the FIA identified was the same amount as another team’s entire development budget. That would easily explain enough of the success to contaminate the results. (You probably don’t want to get into the discussion of whether it was the sole reason, given I’m one of the people who identified at least 3 other FIA regulation breaches that helped Red Bull in 2021…)',
+            'I disagree, I’m thinking the same as asz: 2 mil is a very minor overspend, you can’t really call that the difference between having a dominant team or simply a top team, back in the days ferrari would spend tens of millions more than other teams, yet apart from the schumacher era they weren’t very dominant over the f1 history, and even during that era there’s only 3 dominant seasons at best, some don’t even call 2001 dominant, after all hakkinen wasn’t performing at his usual level for a comparison.',
+            'Wouldn’t change my view. And Aston Martin are a classic example of it not just being about the money. The series was on its knees financially and albeit it wasn’t just because of the cap, having limited resources means you need to be smarter rather just pouring money into an arms race that gave us one team domination to no one’s benefit bar the team itself',
+            'What a silly man, if there is no cap, of course you will have opportunities to improve your car but the big teams will spend even more than you so you’re upgrades will be good for nothing. If anything it is the tight design regulations that prevent new radical ideas or them changing every so often resets the the team catching up.',
         ],
     },
-    # A bad-input criterion looks like this. Uncomment and adjust if that's one
-    # of your five — these are raw request bodies, sent exactly as written.
-    #
-    # {
-    #     "name": "bad input",
-    #     "criterion": 3,
-    #     "bodies": [
-    #         {"text": "", "creator_id": "eval_bad_empty"},
-    #         {"creator_id": "eval_bad_missing"},          # no text field at all
-    #         {"text": "word " * 50000, "creator_id": "eval_bad_huge"},
-    #         {"text": None, "creator_id": "eval_bad_null"},
-    #     ],
-    # },
-
-    # TODO: add what your remaining criteria need.
-    #
-    # A criterion about the appeal path can't be tested by sending text alone;
-    # it needs a submission first and then an appeal against the content_id
-    # that came back. You'll need to test that one by hand, or extend this file
-    # and run_eval.py to do it. Saying which you did is part of the write-up.
+    {
+        "name": "label coverage across the score range",
+        "criterion": 3,
+        "texts": [
+            # One expected in each band: AI, borderline, human.
+            'The introduction of a revised cost cap represents a significant development for the sport. It is important to note that financial regulations serve several key purposes, including the promotion of competitive balance and the long-term sustainability of participating organisations. Furthermore, teams must carefully allocate their resources in order to maximise performance within the established constraints. Overall, while the policy has been subject to criticism, it is widely regarded as a positive step forward.',
+            'I think the cap is fine in principle but the enforcement is the part nobody wants to talk about. If the penalty for going over is a fine and a bit of wind tunnel time then the maths works out in favour of spending anyway, which is roughly what happened the first time it was tested. Either the sanction has to hurt more than the advantage does or the whole thing is just paperwork that the bigger teams are better resourced to handle.',
+            'I was there. Great event, these cars are awesome and they sound glorious which is not something you say as often in Motorsport these days. Hopefully next time, if they ever come back and I hope they will, they announce it better because it wasn’t sold out although the weather warning we had before the weekend didn’t help, surely',
+        ],
+    },
+    {
+        # Criterion 4 cannot be expressed as text alone, because an appeal needs
+        # a content_id that came back from a submission first. These submissions
+        # exist to produce ids, and the appeals themselves are run by hand with
+        # curl, which is what the write-up says.
+        "name": "appeal path, submissions that produce ids to appeal against",
+        "criterion": 4,
+        "texts": [
+            'There are a number of important factors to consider when evaluating tyre strategy. First, track temperature has a considerable influence on degradation rates across a race distance. Additionally, the selection of compound must be balanced against the anticipated number of pit stops. Moreover, teams frequently adjust their approach in response to changing conditions. In conclusion, effective tyre management remains an essential component of overall race performance.',
+            'The amount of overspend that the FIA identified was the same amount as another team’s entire development budget. That would easily explain enough of the success to contaminate the results. (You probably don’t want to get into the discussion of whether it was the sole reason, given I’m one of the people who identified at least 3 other FIA regulation breaches that helped Red Bull in 2021…)',
+            'I think the cap is fine in principle but the enforcement is the part nobody wants to talk about. If the penalty for going over is a fine and a bit of wind tunnel time then the maths works out in favour of spending anyway, which is roughly what happened the first time it was tested. Either the sanction has to hurt more than the advantage does or the whole thing is just paperwork that the bigger teams are better resourced to handle.',
+        ],
+    },
+    {
+        "name": "bad input",
+        "criterion": 5,
+        "bodies": [
+            {"text": "", "creator_id": "eval_bad_empty"},
+            {"creator_id": "eval_bad_missing"},
+            {"text": "word " * 50000, "creator_id": "eval_bad_huge"},
+            {"text": None, "creator_id": "eval_bad_null"},
+        ],
+    },
 ]
 
 
