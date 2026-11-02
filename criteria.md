@@ -42,65 +42,89 @@ Two things worth knowing before you pick numbers:
   a **miss**.
 
 ---
-## 1.
 
-<!-- Your criterion. It must name a number. -->
+## 1. False positives on my own writing
 
-
-
-**Why this target:**
-
-
-
----
-
-## 2.
-
-<!-- Your criterion. -->
-
-
+Of 10 pieces I wrote myself, at most 1 is labelled `high-confidence AI`. The
+target has to hold on all three trials, so a run of 2, 1, 2 is a miss.
 
 **Why this target:**
 
-
+The two errors this service can make do not cost the same thing. Letting some
+generated text through costs a writing site a little bit of credibility. Telling
+a person who wrote every word themselves that a machine did it costs that person
+their standing on the platform, and they have no way to prove otherwise. One in
+ten is already more wrong accusations than I would want to defend, and I am
+setting it there rather than lower because `detector.py` says in writing that
+plain, ordinary sentences score about as machine-like as machine writing does.
+Plain is how I write, so this is the criterion I expect to be in real danger of
+missing.
 
 ---
 
-## 3.
+## 2. Clearly-AI and clearly-human text land far apart
 
-<!-- Your criterion. -->
-
-
+Across 5 texts I am confident are AI-generated and 5 I am confident are human,
+the mean combined score of the AI group is at least 0.25 higher than the mean of
+the human group.
 
 **Why this target:**
 
-
+A service whose scores all bunch around the middle has not measured anything,
+even when its labels happen to come out right. I want evidence that the two
+signals together move with authorship and not just with length or topic. A gap
+of 0.25 is wide enough that the two groups are plainly distinguishable on the
+score, and I am deliberately not requiring them to land on opposite sides of my
+unsure band, because a detector that confident does not exist and my thresholds
+are set to keep borderline work out of both confident labels.
 
 ---
 
-## 4.
+## 3. All three labels are reachable
 
-<!-- Your criterion. -->
-
-
+Across a spread of 12 submissions chosen to cover the score range, each of the
+three labels appears at least once, on every one of the three trials.
 
 **Why this target:**
 
-
+A label that no input can produce is dead code pretending to be a policy. The
+starter warns about exactly this, since a weighted average of two signals cannot
+leave the range between them, and a flat style signal would strand the human
+label behind a model score below 0.20. Checking coverage is how I find out
+whether my score actually spans the bands I wrote, rather than assuming it does.
 
 ---
 
-## 5.
+## 4. The appeal path always records and always changes status
 
-<!-- Your criterion. -->
-
-
+Of 10 appeals against real content ids, 10 return a success response and 10 write
+a log entry whose status is `under_review`. Of 10 appeals against ids that do not
+exist, 10 return a 404 and none of them write a decision entry.
 
 **Why this target:**
 
-
+The appeal is the only thing standing between a wrong accusation and nothing at
+all, so a 9 out of 10 here is not a near miss, it is one person whose complaint
+vanished. I require the unknown-id half as well because an appeal path that
+silently accepts a typo is worse than one that errors, since the writer walks
+away believing they have been heard when no record of them exists.
 
 ---
+
+## 5. Bad input never becomes a crash
+
+Four malformed submissions, which are empty text, no `text` field at all, a
+50,000 word body, and `text` set to null, all return a 4xx response carrying a
+JSON `error` field. None return a 500, and `POST /ping` still answers afterwards.
+That is 4 of 4 on each of the three trials.
+
+**Why this target:**
+
+A crash on malformed input is the most common real failure a service has, and it
+is also the cheapest attack anyone can run against this one. I am requiring 4 of
+4 rather than most of them because a single unhandled body takes the whole
+process down, which denies service to every honest writer at once rather than
+mislabelling one of them.
 
 <!-- ─────────────────────────────────────────────────────────────────────────
      UNIT 8 — read this before you change anything above.
