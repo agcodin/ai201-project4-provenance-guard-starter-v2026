@@ -45,85 +45,105 @@ def words(text: str) -> list[str]:
     return re.findall(r"[a-z0-9']+", text.lower())
 
 
-# ── The three measures — YOU BUILD THESE ─────────────────────────────────────
+# ── The three measures ───────────────────────────────────────────────────────
+# All three return "more human" as the HIGH end. style_signal flips them.
+
+PUNCTUATION_KINDS = (",", ";", ":", "—", "–", "(", "?", "!")
+
+MATTR_WINDOW = 50
+
 
 def sentence_length_spread(text: str) -> float:
     """
-    How much sentence length varies. ← TODO
-
-    Returns:
-        A float. Decide yourself what scale it's on and which direction means
-        "more human" — then write that down, because your combining rule
-        depends on knowing it.
-
-    A hint on what you're reaching for: the standard deviation of sentence
-    lengths, probably divided by the mean so a long text and a short one are
-    comparable. `statistics.stdev` is imported for you.
-
-    Watch the edge case: a one-sentence submission has no spread at all, and
-    `stdev` raises on fewer than two values. Decide what that should return
-    before the attack set decides for you.
+    Coefficient of variation of sentence length in words. Higher means lumpier,
+    which reads more human. A single sentence has no spread, so it returns 0.0
+    and lands at the AI end by default.
     """
-    # TODO: replace this
-    return 0.0
+    lengths = [len(words(s)) for s in sentences(text)]
+    lengths = [n for n in lengths if n]
+    if len(lengths) < 2:
+        return 0.0
+
+    mean = statistics.mean(lengths)
+    if mean == 0:
+        return 0.0
+    return statistics.stdev(lengths) / mean
 
 
 def type_token_ratio(text: str) -> float:
     """
-    Unique words over total words. ← TODO
+    Vocabulary variety, between 0 and 1, higher meaning more varied.
 
-    Returns:
-        A float between 0 and 1. Higher means more varied vocabulary.
-
-    Worth knowing before you rely on it: this measure falls as text gets
-    longer, because common words repeat. Two texts of different lengths aren't
-    directly comparable on it, and if your test inputs vary a lot in length,
-    that alone can look like a signal.
+    Averaged over 50-word windows rather than taken over the whole text,
+    because a plain ratio falls as text gets longer and would turn length into
+    a signal. Texts under one window fall back to the plain ratio.
     """
-    # TODO: replace this
-    return 0.0
+    tokens = words(text)
+    if not tokens:
+        return 0.0
+    if len(tokens) <= MATTR_WINDOW:
+        return len(set(tokens)) / len(tokens)
+
+    windows = [
+        len(set(tokens[i:i + MATTR_WINDOW])) / MATTR_WINDOW
+        for i in range(len(tokens) - MATTR_WINDOW + 1)
+    ]
+    return statistics.mean(windows)
 
 
 def punctuation_density(text: str) -> float:
     """
-    How much punctuation, relative to length. ← TODO
-
-    Returns:
-        A float. Whether you count all punctuation or only some kinds — commas,
-        semicolons, dashes — is a real choice. Semicolons and em dashes are
-        more interesting than full stops, because they vary more between
-        writers.
+    How many of the eight tracked punctuation kinds the text uses at all,
+    divided by eight. Variety rather than volume, because a comma count mostly
+    tracks sentence length, while reaching for a semicolon or a dash is a habit
+    that differs between writers.
     """
-    # TODO: replace this
-    return 0.0
+    return sum(1 for mark in PUNCTUATION_KINDS if mark in text) / len(PUNCTUATION_KINDS)
 
 
 # ── Combining them ───────────────────────────────────────────────────────────
+# Each measure gets a floor and a ceiling, and anything between them scales
+# straight across. The anchors come from the four calibration inputs in
+# calibrate.py and are written up in the README.
+
+SPREAD_AI, SPREAD_HUMAN = 0.35, 0.70
+VARIETY_AI, VARIETY_HUMAN = 0.62, 0.86
+PUNCTUATION_AI, PUNCTUATION_HUMAN = 0.10, 0.375
+
+# Variety is weighted down to almost nothing because it did not separate the
+# calibration inputs at all — the clearly-AI paragraph scored HIGHER on it than
+# two of the three human ones. Removing it would have been tidier, and leaving
+# it in at 0.10 keeps the measure visible so unit 8 can show whether that holds
+# on longer text.
+WEIGHT_SPREAD = 0.60
+WEIGHT_VARIETY = 0.10
+WEIGHT_PUNCTUATION = 0.30
+
+
+def _to_ai_score(value: float, ai_anchor: float, human_anchor: float) -> float:
+    """One measure, flipped and rescaled so 1.0 is the AI end."""
+    span = human_anchor - ai_anchor
+    fraction = (value - ai_anchor) / span
+    return min(max(1.0 - fraction, 0.0), 1.0)
+
 
 def style_signal(text: str) -> float:
-    """
-    The style signal as a 0–1 score. **Higher means more likely AI.** ← TODO
+    """The style signal as a 0-1 score. Higher means more likely AI."""
+    if not words(text):
+        return 0.5
 
-    Combine your three measures into one number. Same direction as
-    `detector.model_signal`, so that `scoring.combine_signals` can treat them
-    the same way — if one of your signals runs backwards, everything above it
-    is wrong in a way that's hard to see.
+    spread = _to_ai_score(sentence_length_spread(text), SPREAD_AI, SPREAD_HUMAN)
+    variety = _to_ai_score(type_token_ratio(text), VARIETY_AI, VARIETY_HUMAN)
+    punctuation = _to_ai_score(
+        punctuation_density(text), PUNCTUATION_AI, PUNCTUATION_HUMAN
+    )
 
-    Two things to decide and write down:
-
-      1. Which direction each measure points. Low spread means more AI-ish, so
-         it needs flipping. Work out which of your three need that.
-      2. How to get each onto a comparable scale. A raw type-token ratio sits
-         between 0 and 1; a raw punctuation count doesn't. Adding them
-         unscaled means whichever has the bigger numbers wins by default.
-
-    Test it on the four calibration inputs from Milestone 4 — clearly AI,
-    clearly human, plain conventional human writing, lightly-edited AI — before
-    you trust it. Plain and ordinary, not formal: formal prose reads as *human*
-    to signal one, and it is plain writing that gets accused.
-    """
-    # TODO: replace this
-    return 0.5
+    return round(
+        WEIGHT_SPREAD * spread
+        + WEIGHT_VARIETY * variety
+        + WEIGHT_PUNCTUATION * punctuation,
+        4,
+    )
 
 
 if __name__ == "__main__":
