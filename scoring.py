@@ -93,12 +93,13 @@ def score_to_label(score: float) -> tuple[str, str]:
     if score >= config.AI_THRESHOLD:
         return "ai", (
             "We think this was very likely written by AI. If you wrote it "
-            "yourself, you can say so and a person will look at it — nothing "
-            "is decided until they have."
+            "yourself, you can say so and a person will look at it. Nothing "
+            "is decided until a person has."
         )
     if score <= config.HUMAN_THRESHOLD:
         return "human", (
-            "This reads like your own writing to us. Nothing further is needed."
+            "This reads like your own writing to us, and there is nothing "
+            "further you need to do."
         )
     return "unsure", (
         "We cannot tell whether this was written by a person or by AI, so we "
