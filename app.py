@@ -289,6 +289,31 @@ def _refuse(creator_id: str, reason: str, message: str, status: int):
     return jsonify({"error": reason, "message": message}), status
 
 
+@app.get("/content/<content_id>")
+def content_status(content_id):
+    """
+    One item's current status. Stretch feature, not required.
+
+    The log is append-only, so the status a reader wants is the one on the most
+    recent entry touching this id.
+    """
+    history = audit.entries_for(content_id)
+    if not history:
+        return jsonify({"error": "unknown_content_id",
+                        "message": f"No submission with id {content_id}."}), 404
+
+    decision = next((e for e in history if e.get("combined_score") is not None), {})
+    return jsonify({
+        "content_id": content_id,
+        "creator_id": decision.get("creator_id"),
+        "status": history[-1].get("status"),
+        "guess": decision.get("guess"),
+        "confidence": decision.get("combined_score"),
+        "label": decision.get("label"),
+        "appealed": any(e.get("event") == "appeal" for e in history),
+    })
+
+
 # ── Already works ─────────────────────────────────────────────────────────────
 
 @app.get("/log")
