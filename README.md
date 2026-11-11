@@ -487,23 +487,240 @@ are visible in the log as well as in the response.
 
 ## Attack Run — Before
 
-<!-- Every attack with its outcome and a held-or-broke mark.
-     `run_attacks.py --label before` produces the table. -->
+56 attacks across five families, run with `python run_attacks.py --set attack_set
+--label before`. Nothing crashed, so `run_attacks.py` auto-marked no verdicts
+and all 56 calls are mine.
 
+**41 held and 15 broke.** The full run with every response is in
+`results/attack_run_2026-11-11_1139_before.md`.
 
+How I decided. An `evasion` row broke if generated text came back as anything
+other than `ai`, because its goal was to avoid being flagged and my unsure band
+does not flag anybody. A `false_positive` row broke if real human writing came
+back `ai`, and unsure counts as held there, since my own label says in words
+that it is not an accusation. A `malformed` row broke if my service returned a
+confident decision on something that is not prose. Prompt injection could only
+break if text in the body changed what the service did.
+
+| ID | Family | Targeting | Status | Guess | Score | Verdict |
+|---|---|---|---|---|---|---|
+| EV01 | evasion | signal two: typos raise word variety | 200 | unsure | 0.412 | **BROKE** |
+| EV02 | evasion | signal two: broken-up sentences raise length spread | 200 | unsure | 0.466 | **BROKE** |
+| EV03 | evasion | signal two: a pasted quotation changes the shape | 200 | unsure | 0.576 | **BROKE** |
+| EV04 | evasion | signal one: unusual words raise perplexity | 200 | unsure | 0.716 | **BROKE** |
+| EV05 | evasion | both signals: heavy human editing pass | 200 | human | 0.264 | **BROKE** |
+| EV06 | evasion | signal two: one very long sentence and one very short | 200 | unsure | 0.455 | **BROKE** |
+| EV07 | evasion | signal two: padding with punctuation | 200 | unsure | 0.594 | **BROKE** |
+| EV08 | evasion | signal one: text below the token window | 400 | — | — | held |
+| EV09 | evasion | both: AI text with a human opening paragraph bolted on | 200 | unsure | 0.691 | **BROKE** |
+| EV10 | evasion | signal two: repeated stanza structure | 200 | ai | 0.957 | held |
+| FP01 | false_positive | plain, clear human writing with no flourishes | 200 | unsure | 0.655 | held |
+| FP02 | false_positive | human writing in a formal register | 200 | ai | 0.807 | **BROKE** |
+| FP03 | false_positive | a non-native English speaker writing carefully | 200 | ai | 0.850 | **BROKE** |
+| FP04 | false_positive | a student essay written to a rubric | 200 | ai | 0.844 | **BROKE** |
+| FP05 | false_positive | technical documentation written by a person | 200 | ai | 0.868 | **BROKE** |
+| FP06 | false_positive | a person imitating a formal template | 200 | ai | 0.779 | **BROKE** |
+| FP07 | false_positive | human writing that repeats a phrase deliberately | 200 | unsure | 0.551 | held |
+| FP08 | false_positive | very short genuine human submission | 400 | — | — | held |
+| PI01 | prompt_injection | instruction to ignore the check | 200 | unsure | 0.423 | held |
+| PI02 | prompt_injection | instruction disguised as a system message | 200 | human | 0.210 | held |
+| PI03 | prompt_injection | instruction wrapped in the writer's voice | 200 | unsure | 0.651 | held |
+| PI04 | prompt_injection | attempt to make the label text hostile | 200 | unsure | 0.562 | held |
+| PI05 | prompt_injection | attempt to inject into the audit log | 200 | unsure | 0.595 | held |
+| PI06 | prompt_injection | instruction plus real human text | 200 | unsure | 0.626 | held |
+| MF01 | malformed | text is only whitespace | 400 | — | — | held |
+| MF02 | malformed | text is a single character | 400 | — | — | held |
+| MF03 | malformed | text is control characters | 400 | — | — | held |
+| MF04 | malformed | text is only punctuation | 400 | — | — | held |
+| MF05 | malformed | text is a very long single word | 200 | ai | 0.959 | **BROKE** |
+| MF06 | malformed | text is emoji only | 200 | unsure | 0.674 | **BROKE** |
+| MF07 | malformed | text is right-to-left script | 400 | — | — | held |
+| MF08 | malformed | text is 60,000 characters | 413 | — | — | held |
+| RQ01 | malformed | no text field at all | 400 | — | — | held |
+| RQ02 | malformed | no creator_id | 400 | — | — | held |
+| RQ03 | malformed | text is a number | 400 | — | — | held |
+| RQ04 | malformed | text is a list | 400 | — | — | held |
+| RQ05 | malformed | text is null | 400 | — | — | held |
+| RQ06 | malformed | creator_id is an object | 400 | — | — | held |
+| RQ07 | malformed | body is a JSON array, not an object | 400 | — | — | held |
+| RQ08 | malformed | body is unparseable JSON | 400 | — | — | held |
+| RQ09 | malformed | body is empty | 400 | — | — | held |
+| RQ10 | malformed | body is form-encoded, not JSON | 400 | — | — | held |
+| RQ11 | malformed | body is JSON claiming to be plain text | 400 | — | — | held |
+| RQ12 | malformed | deeply nested JSON | 400 | — | — | held |
+| FL01_01 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | held |
+| FL01_02 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | held |
+| FL01_03 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | held |
+| FL01_04 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | held |
+| FL01_05 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | held |
+| FL01_06 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | held |
+| FL01_07 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | held |
+| FL01_08 | flood_same_creator | 20 rapid submissions from one creator | 400 | — | — | held |
+| FL01_09 | flood_same_creator | 20 rapid submissions from one creator | 429 | — | — | held |
+| FL01_10 | flood_same_creator | 20 rapid submissions from one creator | 429 | — | — | held |
+| FL01_11 | flood_same_creator | 20 rapid submissions from one creator | 429 | — | — | held |
+| FL01_12 | flood_same_creator | 20 rapid submissions from one creator | 429 | — | — | held |
+
+### By family
+
+| Family | Held | Broke |
+|---|---|---|
+| evasion | 2 | 8 |
+| false_positive | 3 | 5 |
+| prompt_injection | 6 | 0 |
+| malformed, including the request-shape rows | 18 | 2 |
+| flood_same_creator | 12 | 0 |
+
+Prompt injection held on all six, and it held for a structural reason rather
+than because I defended against it. Nothing in this service passes the
+submitted text to a generative model. Signal one only computes perplexity over
+it and signal two counts characters, so there is no place for an instruction to
+be read as an instruction. PI05 tried to inject into the audit log, and
+`audit.py` writes through `json.dumps`, so every one of the 165 lines in
+`logs/audit.jsonl` still parses. I am not claiming credit for this. A later
+version that put the text near a model would lose all six.
 
 **Ten audit log entries from the run**
 
-<!-- Choose entries that show the interesting failures, not the ten easiest. -->
+```bash
+$ curl "http://127.0.0.1:5000/log?limit=200"
+```
 
 ```json
-
+[
+  {
+    "timestamp": "2026-11-11T16:39:52+00:00",
+    "content_id": "cb3622076404",
+    "creator_id": "attacker_EV04",
+    "guess": "unsure",
+    "model_score": 0.6114,
+    "style_score": 0.8727,
+    "combined_score": 0.7159,
+    "label": "We cannot tell whether this was written by a person or by AI, so we are not making a call either way. This is not an accusation and it does not count against you. If you want it looked at by a person, you can ask.",
+    "status": "decided",
+    "text_length": 658
+  },
+  {
+    "timestamp": "2026-11-11T16:39:52+00:00",
+    "content_id": "688cb3f1232a",
+    "creator_id": "attacker_EV05",
+    "guess": "human",
+    "model_score": 0.3212,
+    "style_score": 0.179,
+    "combined_score": 0.2643,
+    "label": "This reads like your own writing to us, and there is nothing further you need to do.",
+    "status": "decided",
+    "text_length": 460
+  },
+  {
+    "timestamp": "2026-11-11T16:39:52+00:00",
+    "content_id": "6a126a9399aa",
+    "creator_id": "attacker_EV06",
+    "guess": "unsure",
+    "model_score": 0.5727,
+    "style_score": 0.2774,
+    "combined_score": 0.4546,
+    "label": "We cannot tell whether this was written by a person or by AI, so we are not making a call either way. This is not an accusation and it does not count against you. If you want it looked at by a person, you can ask.",
+    "status": "decided",
+    "text_length": 640
+  },
+  {
+    "timestamp": "2026-11-11T16:39:52+00:00",
+    "content_id": "703ea4e7b6f4",
+    "creator_id": "attacker_FP02",
+    "guess": "ai",
+    "model_score": 0.7387,
+    "style_score": 0.9104,
+    "combined_score": 0.8074,
+    "label": "We think this was very likely written by AI. If you wrote it yourself, you can say so and a person will look at it. Nothing is decided until a person has.",
+    "status": "decided",
+    "text_length": 477
+  },
+  {
+    "timestamp": "2026-11-11T16:39:52+00:00",
+    "content_id": "af6da737f822",
+    "creator_id": "attacker_FP03",
+    "guess": "ai",
+    "model_score": 0.8051,
+    "style_score": 0.9169,
+    "combined_score": 0.8498,
+    "label": "We think this was very likely written by AI. If you wrote it yourself, you can say so and a person will look at it. Nothing is decided until a person has.",
+    "status": "decided",
+    "text_length": 418
+  },
+  {
+    "timestamp": "2026-11-11T16:39:52+00:00",
+    "content_id": "bc2f034f337e",
+    "creator_id": "attacker_FP04",
+    "guess": "ai",
+    "model_score": 0.8329,
+    "style_score": 0.8604,
+    "combined_score": 0.8439,
+    "label": "We think this was very likely written by AI. If you wrote it yourself, you can say so and a person will look at it. Nothing is decided until a person has.",
+    "status": "decided",
+    "text_length": 443
+  },
+  {
+    "timestamp": "2026-11-11T16:39:52+00:00",
+    "content_id": "56e0646eda98",
+    "creator_id": "attacker_FP05",
+    "guess": "ai",
+    "model_score": 0.8005,
+    "style_score": 0.9703,
+    "combined_score": 0.8684,
+    "label": "We think this was very likely written by AI. If you wrote it yourself, you can say so and a person will look at it. Nothing is decided until a person has.",
+    "status": "decided",
+    "text_length": 393
+  },
+  {
+    "timestamp": "2026-11-11T16:39:52+00:00",
+    "content_id": "986cf766d566",
+    "creator_id": "attacker_FP06",
+    "guess": "ai",
+    "model_score": 0.8814,
+    "style_score": 0.6261,
+    "combined_score": 0.7793,
+    "label": "We think this was very likely written by AI. If you wrote it yourself, you can say so and a person will look at it. Nothing is decided until a person has.",
+    "status": "decided",
+    "text_length": 353
+  },
+  {
+    "timestamp": "2026-11-11T16:39:53+00:00",
+    "content_id": "657acf7302bc",
+    "creator_id": "attacker_MF05",
+    "guess": "ai",
+    "model_score": 0.9976,
+    "style_score": 0.9,
+    "combined_score": 0.9586,
+    "label": "We think this was very likely written by AI. If you wrote it yourself, you can say so and a person will look at it. Nothing is decided until a person has.",
+    "status": "decided",
+    "text_length": 4000
+  },
+  {
+    "timestamp": "2026-11-11T16:39:53+00:00",
+    "creator_id": "attacker_flood",
+    "event": "rejected",
+    "status": "rejected",
+    "reason": "rate_limited",
+    "limit": "8 per 1 minute"
+  }
+]
 ```
 
 **The single worst outcome** — the one I'd least want to explain to a writer
 whose work got caught by it:
 
+FP03, which the attack set describes as a non-native English speaker writing
+carefully. It scored 0.8051 on signal one and 0.9169 on signal two, combining
+to 0.8498, and it was told its work was very likely written by AI.
 
+That is the exact person `detector.py` warned about in unit 7, and I wrote the
+warning into my own README before running anything. Someone staying inside
+vocabulary they are confident in produces common words in even sentences, which
+is what both of my signals score as machine-like. The writing was not borderline
+by my own numbers either. At 0.8498 it sits well clear of my 0.72 line, so the
+service was not hesitating. It was confident, and it was confidently wrong about
+the one writer with the least standing to argue back.
 
 ---
 
