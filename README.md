@@ -171,11 +171,12 @@ project is about, written into one line of arithmetic.
 | `DISAGREEMENT_GAP` | 0.35 |
 | `DISAGREEMENT_LEAN` | 0.35 |
 | `HUMAN_THRESHOLD` | 0.40 |
-| `AI_THRESHOLD` | 0.72 |
+| `AI_THRESHOLD` | 0.72 in unit 7, raised to 0.88 in unit 8 — see **The Improvement** |
 | style weights, spread / variety / punctuation | 0.60 / 0.10 / 0.30 |
 
 The unsure band runs from 0.40 to 0.72, which is wider than the starter's
-default on both sides. I widened it deliberately. A wider band means more
+default on both sides. Unit 8 widened it again to 0.40 to 0.88, for the reason
+in **The Improvement**. I widened it deliberately. A wider band means more
 generated text gets through without a confident call, and the people who pay for
 the narrow version are real writers being accused, so I would rather the site
 absorbed the cost than the writer.
@@ -205,7 +206,7 @@ other, only settings that decide who pays.
 |---|---|---|
 | high-confidence human | 0.00 – 0.40 | This reads like your own writing to us, and there is nothing further you need to do. |
 | unsure | 0.40 – 0.72 | We cannot tell whether this was written by a person or by AI, so we are not making a call either way. This is not an accusation and it does not count against you. If you want it looked at by a person, you can ask. |
-| high-confidence AI | 0.72 – 1.00 | We think this was very likely written by AI. If you wrote it yourself, you can say so and a person will look at it. Nothing is decided until a person has. |
+| high-confidence AI | 0.72 – 1.00 in unit 7, 0.88 – 1.00 after the unit 8 improvement | We think this was very likely written by AI. If you wrote it yourself, you can say so and a person will look at it. Nothing is decided until a person has. |
 
 All three are reachable and I have hit all three through the running service.
 The clearly-AI calibration input returns 0.7945, the clearly-human one returns
@@ -373,6 +374,22 @@ at 0.8078, 0.5532 and 0.2626.
   of a human review to the end so it reads as available rather than required. I
   also cut an em dash from the AI label, because a dash in a sentence that might
   be an accusation makes it sound clipped.
+
+**Moment 3, unit 8**
+
+- *What I asked for:* I pasted in the input that got past my detector, what my
+  service returned, and both signal scores, and asked for three possible causes
+  at different stages of my pipeline without being told which was most likely.
+- *What came back:* three candidates, which were the route refusing to score
+  part of the text, signal two reading broken-up sentences as human variety, and
+  the combining rule averaging a split instead of resolving it.
+- *What I changed:* nothing in the code from that answer directly. I checked
+  which one it actually was by reading the logged signal scores for all ten
+  evasion rows, and signal two was the cause on six of the eight that broke,
+  which is the second candidate. The third one turned out to matter for exactly
+  one row, EV04, which missed my threshold by 0.0041. Having the three options
+  in front of me is what made me check all eight rather than diagnose the first
+  one and stop.
 
 <!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
 
@@ -960,17 +977,49 @@ to the site letting generated work through without a confident call.
 
 ## What's Still Broken
 
-<!-- For each attack still getting through and each criterion still missed:
-     what you'd do, and why you stopped. -->
+**Eight evasion rows still get through, and the same measure is why.** All eight
+move `sentence_length_spread`, which is 0.60 of my style signal, by changing the
+shape of the text without changing a word of substance. What I would do is stop
+weighting a measure that can be inverted in a minute, and either drop the style
+signal to about 0.15 of the combined score or replace sentence length spread
+with something that is not a free lunch to defeat. I stopped because this unit
+allows one change and the false-positive family was costing real people. An
+evasion costs the site some credibility, which is recoverable.
 
+**Criterion 3 is now missed, and I broke it on purpose.** The `ai` label needs a
+score above 0.88 and my strongest generated sample reaches 0.8078. The fix is to
+make the scoring actually separate the two classes rather than to walk the
+threshold back to where it was accusing people, so this one waits on the signal
+work above. I am not revising the criterion, because it was perfectly
+measurable. I measured it and I missed it.
 
+**MF05 and MF06 still get decisions they should not get.** A single word repeated
+4,000 times comes back as high-confidence AI at 0.959, and a body of emoji comes
+back unsure. Neither is writing, and a service that returns a verdict on them is
+answering a question nobody asked. What I would do is check that the text has
+some minimum number of distinct words before the signals see it, which is a
+validation change rather than a scoring one. I stopped because it is not what
+the diagnosis named and it would have muddied the before and after.
+
+**Criterion 1 has never been run.** It needs ten pieces of my own writing and I
+have not put them together. The attack set gave me a 5 in 8 false-positive rate
+on somebody else's human text, so I already know roughly what the answer will
+be, but that is not the same as having measured my own.
 
 **The trade I'd make if this ran for real:**
 
-<!-- Two sentences. Fewer wrong accusations means more AI text getting through.
-     Say which way you'd go and WHO PAYS FOR IT. -->
+I would keep the band wide and let generated work through, because the two
+errors do not land on the same person. A missed detection costs a writing site a
+little credibility spread across everybody, and a wrong accusation costs one
+named person their standing on the platform, with my own attack run showing that
+person is most likely to be someone writing carefully in a second language. The
+site can absorb its cost and the writer cannot absorb theirs, so the site pays.
 
+What makes that defensible rather than lazy is the appeal path, and it only
+works if somebody actually reads the appeals. A wide band plus an unread queue
+is the same system with extra steps.
 
+---
 
 <!-- ═════════════════════════════════════════════════════════════════════
 
