@@ -329,17 +329,13 @@ $ curl -X POST http://127.0.0.1:5000/ping -H "Content-Type: application/json" -d
 
 ### Note for next unit
 
-`scenarios.py` is filled in for four of the five criteria, which are score
-spread, label coverage, the appeal path and bad input. Criterion 4 cannot be
-expressed as text alone, since an appeal needs a `content_id` that a submission
-returned, so those submissions produce the ids and the appeals themselves are
-run by hand with curl.
+`scenarios.py` covers all five criteria. Criterion 4 cannot be expressed as text
+alone, since an appeal needs a `content_id` that a submission returned, so it has
+its own runner in `appeal_check.py`.
 
-Scenario 1 is still a placeholder, and that is deliberate. Criterion 1 is about
-ten pieces I wrote myself, and filling it with anything else would make the
-criterion measure prose that is not mine. On a dry run of the rest, the score
-spread came out at 0.443 against a target of 0.25, and all three labels appeared
-at 0.8078, 0.5532 and 0.2626.
+Scenario 1 is ten paragraphs of my own coursework, six from a CGT 105 analysis of
+the controversy around Grand Theft Auto V and four from a CGT 105 analysis of
+Computer Space.
 
 ---
 
@@ -744,27 +740,54 @@ the one writer with the least standing to argue back.
 ## Run Log and Verdicts
 
 `python run_eval.py --label before`, three trials, plus `python appeal_check.py`
-for criterion 4. Full output in `results/run_2026-11-11_1142_before.md` and
+for criterion 4. Full output in `results/run_2026-11-11_1149_before.md` and
 `results/appeals_2026-11-11_1135.md`.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. My own writing labelled high-confidence AI | ≤ 1 of 10 | — | — | — | NOT RUN |
+| 1. My own writing labelled high-confidence AI | ≤ 1 of 10 | 1/10 | 1/10 | 1/10 | MET |
 | 2. Clearly-AI minus clearly-human mean score | ≥ 0.25 | 0.443 | 0.443 | 0.443 | MET |
 | 3. All three labels reachable across 12 inputs | 3 of 3 | 3/3 | 3/3 | 3/3 | MET |
 | 4. Appeals recorded and status changed | 10 of 10 both ways | 10/10 | 10/10 | 10/10 | MET |
 | 5. Bad input returns 4xx, never 500 | 4 of 4 | 4/4 | 4/4 | 4/4 | MET |
 
-Criterion 1 is the one row with no number, and it is not a pass or a miss. The
-criterion is about ten pieces I wrote myself, and I have not assembled them, so
-the scenario in `scenarios.py` is still a placeholder and `run_eval.py` refuses
-to run it. Calling it MET would be the generous reading of nothing at all. The
-attack set did measure the same failure from the other side, and its answer was
-ugly, which is in the diagnosis below.
+Criterion 1 is MET on the number and it is the least reassuring pass in the
+table. One of my ten paragraphs was labelled high-confidence AI on every trial,
+which is inside my target of at most 1 in 10. What the target does not capture
+is that the other nine all landed in the unsure band rather than being cleared,
+between 0.5482 and 0.7018, so the service could not confidently identify a
+single piece of my own writing as mine.
 
 Identical numbers across all three trials are expected. Perplexity over a fixed
 model and a count of characters are both deterministic, so three matching runs
 are evidence the result holds rather than a sign I ran it once.
+
+**Real output, criterion 1**, from `run_eval.py` sending
+`scenarios.SCENARIOS[0]` through `app.py::submit`. The one paragraph that was
+flagged, then the first one that was not:
+
+```json
+[
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.8298,
+    "model_score": 0.786,
+    "style_score": 0.8956,
+    "label": "We think this was very likely written by AI. If you wrote it yourself, you can say so and a person will look at it. Nothing is decided until a person has.",
+    "sent": "The rules of Computer Space were straightforward but challenging to ma"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.7018,
+    "model_score": 0.5666,
+    "style_score": 0.9047,
+    "label": "We cannot tell whether this was written by a person or by AI, so we are not making a call either way. This is not an accusation and it does not count against you. If you want it looked at by a person, you can ask.",
+    "sent": "Grand Theft Auto V sparked debate from the day it released. People arg"
+  }
+]
+```
 
 **Real output, criterion 2**, from `run_eval.py` sending `scenarios.SCENARIOS[1]`
 through `app.py::submit`. Two of the five AI texts and the first human one:
@@ -846,11 +869,18 @@ through `app.py::submit`. Two of the five AI texts and the first human one:
 
 ### Diagnoses
 
-**Criterion 1 was not measured, but the attack set measured the same thing.**
-Five of the eight `false_positive` rows came back `ai`, which is a 5 in 8 rate
-on text the attack set says is human. My criterion allowed 1 in 10. The stage is
-both signals at once, and the mechanism is that careful human writing and
-machine writing look the same to both of my measures. FP02 through FP06 scored
+**Criterion 1 passed and the per-signal numbers are the real result.** My style
+signal scored all ten of my own paragraphs between 0.8332 and 0.9435, so on that
+signal alone my coursework is machine-written ten times out of ten. The only
+reason the criterion held is that the model signal disagreed, ranging from 0.3948
+to 0.7860, and the weighted average pulled the combined score back into the
+unsure band for nine of them. A criterion that counts only confident accusations
+cannot see a signal that is wrong on every single input.
+
+**The attack set measured the same failure harder.** Five of the eight
+`false_positive` rows came back `ai`, which is a 5 in 8 rate on text the attack
+set says is human. The stage is both signals at once, and the mechanism is that
+careful human writing and machine writing look the same to both of my measures. FP02 through FP06 scored
 0.7387, 0.8051, 0.8329, 0.8005 and 0.8814 on signal one, and 0.9104, 0.9169,
 0.8604, 0.9703 and 0.6261 on signal two. Signal two was the more confident of
 the two on four of the five. My combining rule only intervenes when the signals
@@ -969,6 +999,20 @@ band now starts at 0.88, so the strongest generated text I had on hand gets told
 the service cannot tell. Criterion 2 is untouched at 0.443, because a threshold
 does not move a score, and criteria 4 and 5 are untouched for the same reason.
 
+Criterion 1 went from 1 of 10 to 0 of 10, which looks like a clean gain and is
+not one. The paragraph of mine that was being accused scored 0.8298 before and
+0.8298 after. All that changed is the sentence it now gets, and it is now in the
+unsure band with the other nine. Nobody is being accused and nobody is being
+cleared.
+
+| Criterion | Target | Before | After |
+|---|---|---|---|
+| 1. My own writing flagged | ≤ 1 of 10 | 1/10 MET | 0/10 MET |
+| 2. Score spread | ≥ 0.25 | 0.443 MET | 0.443 MET |
+| 3. All three labels reachable | 3 of 3 | 3/3 MET | 2/3 MISSED |
+| 4. Appeal path | 10 of 10 | 10/10 MET | 10/10 MET |
+| 5. Bad input | 4 of 4 | 4/4 MET | 4/4 MET |
+
 Writing that down is the honest version. I did not widen the unsure band and get
 a better detector. I moved who absorbs the error, from the writer being accused
 to the site letting generated work through without a confident call.
@@ -1001,10 +1045,13 @@ some minimum number of distinct words before the signals see it, which is a
 validation change rather than a scoring one. I stopped because it is not what
 the diagnosis named and it would have muddied the before and after.
 
-**Criterion 1 has never been run.** It needs ten pieces of my own writing and I
-have not put them together. The attack set gave me a 5 in 8 false-positive rate
-on somebody else's human text, so I already know roughly what the answer will
-be, but that is not the same as having measured my own.
+**My style signal is wrong on every piece of my own writing.** It scored all ten
+of my paragraphs between 0.8332 and 0.9435, which means it has never once been
+right about me. Criterion 1 still passed, because the model signal disagreed and
+the average covered for it, and that is the kind of pass worth distrusting. What
+I would do is rebuild the signal around something other than sentence rhythm,
+and I stopped because this unit allows one change and I spent it on the
+threshold.
 
 **The trade I'd make if this ran for real:**
 

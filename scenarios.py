@@ -4,10 +4,10 @@ What your test runs. ← UNIT 8, MILESTONE 3
 Five scenarios, one per criterion. `run_eval.py` runs everything here three
 times, which is what the three-trial rule in criteria.md needs.
 
-⚠️ Scenario 1 is the one slot nothing else can fill. Criterion 1 is about MY
-own writing, so it has to be ten paragraphs I actually wrote. The placeholders
-are still there on purpose, because filling them with text from anywhere else
-would make the criterion measure something other than what it says.
+Scenario 1 is ten paragraphs of my own coursework, taken from two CGT 105
+analysis essays in my Drive. It had to be my own writing rather than text from
+anywhere else, because otherwise criterion 1 measures somebody else's prose and
+reports it as my false-positive rate.
 
 The human samples in scenarios 2 and 3 are real forum comments from the
 RaceFans comment sections, collected for project 3. They are genuinely
@@ -19,10 +19,20 @@ SCENARIOS = [
     {
         "name": "my own writing",
         "criterion": 1,
-        # TEN PARAGRAPHS I WROTE MYSELF GO HERE. Anything else and criterion 1
-        # is measuring somebody else's prose.
+        # Ten paragraphs from two pieces of my own coursework, pulled from my
+        # Drive. Six are from a CGT 105 analysis of the controversy around
+        # Grand Theft Auto V, four from a CGT 105 analysis of Computer Space.
         "texts": [
-            "REPLACE ME with a paragraph I wrote myself, at least 120 characters.",
+            'Grand Theft Auto V sparked debate from the day it released. People argued about its violence, its open criminal world, and the behavior it allowed the player to carry out. Many believed the game encouraged harmful acts because it allowed players to break the law without strict limits. The game became even more controversial as it reached a vast audience, extending its impact far beyond a niche group.',
+            'Much of the debate around the game centered on its blend of realism and freedom. The game encourages free exploration, including stealing cars, fighting police, and interacting with civilians, often in chaotic ways. Critics raised concerns that the game rewards crime by making it easy and sometimes humorous. They said this tone made people worry the game would normalize behavior that would be harmful in real life.',
+            "A key mechanic that shaped the game's reputation is the wanted level system. This mechanic determines how the police react when the player commits a crime. The game uses a star scale that climbs as the player does more damage or keeps resisting arrest. The system is transparent, predictable, and visible on screen. Each level increases police strength and adds new units.",
+            'People criticized this system because they believed the chase became entertainment rather than a consequence. The player may begin crimes just to trigger these battles, and the game rewards escape with a sense of victory. The mechanic does not permanently punish crime. It resets after an escape, so the player can repeat the loop as often as they want.',
+            'The game also faced complaints about how it treats certain groups. Some organizations said the game portrayed women in negative ways. Others said it encouraged players to commit violent acts with no moral reflection. They pointed to missions that involve torture, robberies, and aggressive fights. They argued that the game goes beyond simple fantasy and enters territory that feels uncomfortable due to its realistic graphics and animations.',
+            'The controversy often comes from the gap between how the game behaves and how people think players interpret it. People who do not play may see only the worst parts of the game shown online. They see crime clips without seeing the whole system of consequences. They may also not understand that players use the world as a playground rather than a lesson.',
+            'Released in 1971 by Nolan Bushnell and Ted Dabney, Computer Space was the first commercially sold arcade video game. The player controlled a rocket ship locked in combat with two flying saucers on a black starfield background. It was a bold attempt to merge futuristic themes with interactive electronics at a time when most people had never seen a video game before.',
+            "The rules of Computer Space were straightforward but challenging to master. The player's goal was to destroy as many enemy saucers as possible before the timer expired. Two saucers moved randomly across the screen, firing slow-moving missiles at the player's ship. Each time a saucer was hit, the player earned a point.",
+            "A typical minute of Computer Space begins with the player's rocket ship in the center of the screen. The saucers immediately begin moving across the starfield, firing at random intervals. The player rotates the ship toward one saucer, fires, and hits the thrust button to move closer. The ship glides across the screen, overshooting slightly due to inertia.",
+            "The Computer Space cabinet was built from molded fiberglass painted in bright metallic colors such as red, blue, or green. The curved design looked futuristic, resembling a prop from a science fiction movie. A standard CRT monitor displayed the gameplay, while four control buttons were mounted on the front panel. Because the system ran entirely on logic circuits, every aspect of the game's behavior came from physical hardware rather than software.",
         ],
     },
     {
