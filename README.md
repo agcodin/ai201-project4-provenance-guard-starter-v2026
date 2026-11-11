@@ -380,25 +380,108 @@ at 0.8078, 0.5532 and 0.2626.
 
 ## Rate Limiting
 
-**My limits:** ___ per minute, ___ per day
+**My limits:** 8 per minute, 120 per day
 
 **Why those numbers and not others:**
-<!-- Think about two people: a real writer submitting their own work a few
-     times an hour, and a script sending a thousand variations to map your
-     thresholds. Your numbers have to be liveable for the first and hostile to
-     the second. -->
 
-**What a caller counts as:** <!-- per address, or per creator_id? They fail
-differently — one script can look like a thousand callers, and one household
-can look like one. -->
+A writer working on one piece submits it, reads the label, edits a paragraph
+and submits again. Doing that eight times inside a single minute would mean
+reading nothing in between, so the per-minute number sits above what real use
+looks like and well below what mapping my thresholds would take. The daily
+number matters more than the per-minute one for the attack this service
+actually invites. Finding where my unsure band starts needs a binary search of
+maybe thirty submissions of near-identical text, and a few hundred attempts
+would map the whole score range. At 120 a day that work takes most of a week
+per account instead of four minutes, which is long enough that the cost of
+coming back every day is doing some of the defending.
+
+Neither number stops someone with twenty accounts. They are not meant to. They
+raise the price of the cheap version of the attack, and the log is what catches
+the expensive one.
+
+**What a caller counts as:** the `creator_id` on the request, falling back to
+the caller's address when a request arrives without a usable one.
+
+Keying on `creator_id` is the starter's stretch option and I kept it, because
+the thing I am trying to slow down is one person probing the scoring, and that
+person keeps the same id while their address can change between requests. The
+trade runs the other way too. One script can hand me a thousand different ids
+and look like a thousand writers, and a household or a campus behind one
+address would share a limit if I keyed on the address instead. Neither key is
+right. I picked the one that matches the attack this service invites, and the
+fallback covers requests with no id at all, which is how a malformed flood
+still counts against something.
 
 **The run of status codes when I pushed past it:**
 
-<!-- python run_attacks.py --flood 15 -->
-
+```bash
+$ python run_attacks.py --flood 15
 ```
 
 ```
+  [ 1/15] 200
+  [ 2/15] 200
+  [ 3/15] 200
+  [ 4/15] 200
+  [ 5/15] 200
+  [ 6/15] 200
+  [ 7/15] 200
+  [ 8/15] 200
+  [ 9/15] 429
+  [10/15] 429
+  [11/15] 429
+  [12/15] 429
+  [13/15] 429
+  [14/15] 429
+  [15/15] 429
+
+============================================================
+200 200 200 200 200 200 200 200 429 429 429 429 429 429 429
+============================================================
+
+7 of 15 were rate limited.
+```
+
+Eight through and seven refused, which is the limit behaving exactly as set.
+The full run is in `results/flood_2026-11-11_1134.md`.
+
+**The rejections landed in the log**, which is the part that matters more than
+the status codes. A refused request that leaves no trace makes a flood look
+like a quiet afternoon.
+
+```bash
+$ curl "http://127.0.0.1:5000/log?limit=2"
+```
+
+```json
+{
+  "count": 2,
+  "entries": [
+    {
+      "creator_id": "flood_tester",
+      "event": "rejected",
+      "limit": "8 per 1 minute",
+      "reason": "rate_limited",
+      "status": "rejected",
+      "timestamp": "2026-11-11T16:34:03+00:00"
+    },
+    {
+      "creator_id": "flood_tester",
+      "event": "rejected",
+      "limit": "8 per 1 minute",
+      "reason": "rate_limited",
+      "status": "rejected",
+      "timestamp": "2026-11-11T16:34:03+00:00"
+    }
+  ]
+}
+```
+
+Requests my own route refuses are logged the same way rather than only the
+rate-limited ones, which I wired into `app.py::_refuse` in the previous unit.
+Every 400 for missing text and every 413 for an oversized body writes a
+`rejected` entry carrying the reason, so the four bad-input cases in criterion 5
+are visible in the log as well as in the response.
 
 ---
 
