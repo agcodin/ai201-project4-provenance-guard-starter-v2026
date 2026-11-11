@@ -84,7 +84,14 @@ DISAGREEMENT_LEAN = 0.35
 # that decide who pays for it.
 
 HUMAN_THRESHOLD = 0.40
-AI_THRESHOLD = 0.72
+AI_THRESHOLD = 0.88
+
+# Unit 8 improvement, and the only change made alongside the limiter and the
+# log. 0.72 put five of the eight false-positive attacks into the confident AI
+# band, between 0.779 and 0.868, and both signals scored them high so no
+# reweighting would have moved them. The accusation line is the only lever
+# left. Raising it to 0.88 turns those five into unsure and leaves the two
+# genuinely machine-scored rows above it, at 0.957 and 0.959.
 
 # ⚠️ One thing that catches people out in Milestone 5. A weighted average can
 # only land between its two inputs — so while `style_signal` is still the stub

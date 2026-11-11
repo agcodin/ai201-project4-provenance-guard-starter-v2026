@@ -726,61 +726,235 @@ the one writer with the least standing to argue back.
 
 ## Run Log and Verdicts
 
-<!-- Your five criteria across three trials. `run_eval.py --label before`. -->
+`python run_eval.py --label before`, three trials, plus `python appeal_check.py`
+for criterion 4. Full output in `results/run_2026-11-11_1142_before.md` and
+`results/appeals_2026-11-11_1135.md`.
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. My own writing labelled high-confidence AI | ≤ 1 of 10 | — | — | — | NOT RUN |
+| 2. Clearly-AI minus clearly-human mean score | ≥ 0.25 | 0.443 | 0.443 | 0.443 | MET |
+| 3. All three labels reachable across 12 inputs | 3 of 3 | 3/3 | 3/3 | 3/3 | MET |
+| 4. Appeals recorded and status changed | 10 of 10 both ways | 10/10 | 10/10 | 10/10 | MET |
+| 5. Bad input returns 4xx, never 500 | 4 of 4 | 4/4 | 4/4 | 4/4 | MET |
 
-**Real output from one trial**, pasted as text, naming the file and function
-that produced it:
+Criterion 1 is the one row with no number, and it is not a pass or a miss. The
+criterion is about ten pieces I wrote myself, and I have not assembled them, so
+the scenario in `scenarios.py` is still a placeholder and `run_eval.py` refuses
+to run it. Calling it MET would be the generous reading of nothing at all. The
+attack set did measure the same failure from the other side, and its answer was
+ugly, which is in the diagnosis below.
+
+Identical numbers across all three trials are expected. Perplexity over a fixed
+model and a count of characters are both deterministic, so three matching runs
+are evidence the result holds rather than a sign I ran it once.
+
+**Real output, criterion 2**, from `run_eval.py` sending `scenarios.SCENARIOS[1]`
+through `app.py::submit`. Two of the five AI texts and the first human one:
 
 ```json
-
+[
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.8078,
+    "model_score": 0.7646,
+    "style_score": 0.8727,
+    "label": "We think this was very likely written by AI. If you wrote it yourself, you can say so and a person will look at it. Nothing is decided until a person has.",
+    "sent": "The introduction of a revised cost cap represents a significant develo"
+  },
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.7807,
+    "model_score": 0.7194,
+    "style_score": 0.8727,
+    "label": "We think this was very likely written by AI. If you wrote it yourself, you can say so and a person will look at it. Nothing is decided until a person has.",
+    "sent": "There are a number of important factors to consider when evaluating ty"
+  },
+  {
+    "status": 200,
+    "guess": "human",
+    "confidence": 0.2626,
+    "model_score": 0.2559,
+    "style_score": 0.2727,
+    "label": "This reads like your own writing to us, and there is nothing further you need to do.",
+    "sent": "I was there. Great event, these cars are awesome and they sound glorio"
+  }
+]
 ```
 
-**Diagnoses**
+**Real output, criterion 5**, from the same run, the four malformed bodies:
 
-<!-- For each miss AND each broken attack: the stage and the mechanism.
+```json
+[
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "(empty text)"
+  },
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "{\"creator_id\": \"eval_bad_missing\"}"
+  },
+  {
+    "status": 413,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "word word word word word word word word word word word word word word "
+  },
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "{\"text\": null, \"creator_id\": \"eval_bad_null\"}"
+  }
+]
+```
 
-     Your service has five stages: the route, signal one, signal two, the
-     combining rule, and the label mapping.
+### Diagnoses
 
-     Not a diagnosis:  "The evasion attacks got through."
-     A diagnosis:      "Four evasion inputs got through. All four had typos
-                        added to AI-generated text. My second signal measures
-                        word variety, and typos raise word variety — so it read
-                        them as more human. My combining rule weights that
-                        signal at 0.6, so it dragged the whole score down."
+**Criterion 1 was not measured, but the attack set measured the same thing.**
+Five of the eight `false_positive` rows came back `ai`, which is a 5 in 8 rate
+on text the attack set says is human. My criterion allowed 1 in 10. The stage is
+both signals at once, and the mechanism is that careful human writing and
+machine writing look the same to both of my measures. FP02 through FP06 scored
+0.7387, 0.8051, 0.8329, 0.8005 and 0.8814 on signal one, and 0.9104, 0.9169,
+0.8604, 0.9703 and 0.6261 on signal two. Signal two was the more confident of
+the two on four of the five. My combining rule only intervenes when the signals
+disagree by 0.35, and here they agreed, so the rule passed the average straight
+through. There was nothing for it to catch.
 
-     Look for a pattern. Five failures on one signal is one problem, not five. -->
+**The pattern across the misses is one measure, not five failures.**
+`stylometry.sentence_length_spread` carries 0.60 of the style signal, and it
+measures whether sentence lengths vary. Formal registers, writing to a rubric,
+technical documentation and second-language prose all have even sentence
+lengths, so they score near 1.0 AI-ish on it. Meanwhile EV02 and EV06 are
+generated text broken into uneven sentences, and they scored 0.2774 and lower on
+signal two, which dragged them below my AI line. The same measure produced both
+failure families. It is not measuring authorship, it is measuring whether the
+text has been edited for rhythm, and editing for rhythm is one minute of work.
 
+**Eight of ten evasion rows broke, and one by 0.0041.** EV04 combined to 0.7159
+against a threshold of 0.72. Signal one scored it 0.6114, so the model was not
+fooled much, and signal two scored it 0.8727, which should have pushed it over.
+The weighted average at 0.6 and 0.4 pulled it back under. A rule that trusts the
+model signal more is what let that one through, and that weighting is the thing
+I argued for in unit 7 on the grounds that signal two is cheap to fake.
 
+**Prompt injection held for a reason I did not earn**, which is that no part of
+this service puts the submitted text near a generative model. Worth recording as
+a property of the design rather than as a defence.
 
 ---
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** `AI_THRESHOLD` in `config.py`, from 0.72 to 0.88. One line,
+and nothing else moved apart from the limiter and the log that this unit asked
+for.
 
-**Which diagnosis pointed at it:**
+**Which diagnosis pointed at it:** the false-positive diagnosis above. Five
+genuine human texts landed between 0.779 and 0.868, and both signals scored them
+high, so no reweighting could have moved them. When both of your signals agree
+and both are wrong, the only lever left is where the accusation line sits.
 
 ### Attack Run — After
 
-<!-- Same format. `run_attacks.py --label after` -->
+`python run_attacks.py --set attack_set --label after`, full output in
+`results/attack_run_2026-11-11_1141_after.md`.
 
+| Family | Held before | Broke before | Held after | Broke after |
+|---|---|---|---|---|
+| evasion | 2 | 8 | 2 | 8 |
+| false_positive | 3 | 5 | 8 | 0 |
+| prompt_injection | 6 | 0 | 6 | 0 |
+| malformed | 18 | 2 | 18 | 2 |
+| flood_same_creator | 12 | 0 | 12 | 0 |
+| **total** | **41** | **15** | **46** | **10** |
 
+Five rows changed and 51 of 56 did not. Every score is identical in both runs,
+because nothing about the scoring moved.
+
+| ID | Before | After |
+|---|---|---|
+| FP02 | ai, 0.807 | unsure, 0.807 |
+| FP03 | ai, 0.850 | unsure, 0.850 |
+| FP04 | ai, 0.844 | unsure, 0.844 |
+| FP05 | ai, 0.868 | unsure, 0.868 |
+| FP06 | ai, 0.779 | unsure, 0.779 |
 
 **Did it help, and how do I know:**
 
-<!-- Widening the unsure band usually fixes one problem and creates another.
-     Reporting that trade honestly is worth full credit. -->
+It did what the diagnosis predicted and it cost me a criterion, so the answer is
+yes with a price attached.
 
+Every wrong accusation is gone, which is 5 of 5, and no evasion row that was
+getting through before is caught now. That was not a hope, it was arithmetic.
+The two rows above 0.88 are MF05 at 0.959, which is a single word repeated, and
+EV10 at 0.957. The confident AI band now contains one real attack and one piece
+of junk.
 
+The price shows up in criterion 3. Re-running the eval after the change,
+`results/run_2026-11-11_1142_after.md`, the `ai` label is no longer reachable by
+any of my twelve coverage inputs:
+
+```json
+[
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.8078,
+    "model_score": 0.7646,
+    "style_score": 0.8727,
+    "label": "We cannot tell whether this was written by a person or by AI, so we are not making a call either way. This is not an accusation and it does not count against you. If you want it looked at by a person, you can ask.",
+    "sent": "The introduction of a revised cost cap represents a significant develo"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.5532,
+    "model_score": 0.3711,
+    "style_score": 0.8914,
+    "label": "We cannot tell whether this was written by a person or by AI, so we are not making a call either way. This is not an accusation and it does not count against you. If you want it looked at by a person, you can ask.",
+    "sent": "I think the cap is fine in principle but the enforcement is the part n"
+  },
+  {
+    "status": 200,
+    "guess": "human",
+    "confidence": 0.2626,
+    "model_score": 0.2559,
+    "style_score": 0.2727,
+    "label": "This reads like your own writing to us, and there is nothing further you need to do.",
+    "sent": "I was there. Great event, these cars are awesome and they sound glorio"
+  }
+]
+```
+
+That is 2 of 3 against a target of 3 of 3, so **criterion 3 goes from MET to
+MISSED by my own improvement.** My clearly-AI paragraph scores 0.8078 and the
+band now starts at 0.88, so the strongest generated text I had on hand gets told
+the service cannot tell. Criterion 2 is untouched at 0.443, because a threshold
+does not move a score, and criteria 4 and 5 are untouched for the same reason.
+
+Writing that down is the honest version. I did not widen the unsure band and get
+a better detector. I moved who absorbs the error, from the writer being accused
+to the site letting generated work through without a confident call.
 
 ---
 
