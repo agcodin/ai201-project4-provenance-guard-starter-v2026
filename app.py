@@ -24,12 +24,15 @@ Routes:
     GET  /health      is the service up, and is the model loaded
 """
 
+import concurrent.futures
+import time
 import uuid
 
 from flask import Flask, jsonify, request
 
 import audit
 import config
+import guard
 
 app = Flask(__name__)
 
@@ -163,49 +166,60 @@ def submit():
     import scoring
     import stylometry
 
+    started = time.perf_counter()
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
-        return _refuse("unknown", "bad_body", "Send a JSON object.", 400)
+        return _refuse("unknown", "bad_body", "Send a JSON object.", 400, started)
 
     creator_id = payload.get("creator_id")
     if not isinstance(creator_id, str) or not creator_id.strip():
         return _refuse("unknown", "missing_creator_id",
-                       "creator_id is required.", 400)
+                       "creator_id is required.", 400, started)
     creator_id = creator_id.strip()
 
     text = payload.get("text")
     if text is None:
-        return _refuse(creator_id, "missing_text", "text is required.", 400)
+        return _refuse(creator_id, "missing_text", "text is required.", 400, started)
     if not isinstance(text, str):
         return _refuse(creator_id, "text_not_a_string",
-                       "text has to be a string.", 400)
+                       "text has to be a string.", 400, started)
     if not text.strip():
-        return _refuse(creator_id, "empty_text", "text is empty.", 400)
+        return _refuse(creator_id, "empty_text", "text is empty.", 400, started)
     if len(text) < config.MIN_TEXT_CHARS:
         return _refuse(
             creator_id, "text_too_short",
             f"Submissions need at least {config.MIN_TEXT_CHARS} characters. "
             f"Anything shorter does not give the signals enough to read, and a "
             f"guess from that little text would not be worth showing you.",
-            400,
+            400, started,
         )
     if len(text) > config.MAX_TEXT_CHARS:
         return _refuse(
             creator_id, "text_too_long",
             f"Submissions are capped at {config.MAX_TEXT_CHARS} characters.",
-            413,
+            413, started,
         )
+
+    ok, reason, message = guard.check(text)
+    if not ok:
+        return _refuse(creator_id, reason, message, 400, started)
 
     content_id = uuid.uuid4().hex[:12]
 
     try:
-        model_score = detector.model_signal(text)
-    except detector.DetectorUnavailable as exc:
-        audit.log_rejection(creator_id=creator_id, reason="detector_unavailable",
-                            detail=str(exc))
+        model_score = _model_signal_with_timeout(detector, text)
+    except (detector.DetectorUnavailable, concurrent.futures.TimeoutError) as exc:
+        reason = ("detector_timeout"
+                  if isinstance(exc, concurrent.futures.TimeoutError)
+                  else "detector_unavailable")
+        audit.log_rejection(creator_id=creator_id, reason=reason,
+                            detail=str(exc) or f"over {config.DETECTOR_TIMEOUT_SECONDS}s",
+                            latency_ms=_elapsed_ms(started))
         return jsonify({
-            "error": "detector_unavailable",
-            "message": "The detector is not available, so nothing was decided.",
+            "error": reason,
+            "message": "One of our checks did not answer in time, so nothing "
+                       "was decided about your work. Nothing has been recorded "
+                       "against you. Try again shortly.",
         }), 503
 
     style_score = stylometry.style_signal(text)
@@ -221,6 +235,7 @@ def submit():
         combined_score=combined,
         label=label,
         text_length=len(text),
+        latency_ms=_elapsed_ms(started),
     )
 
     return jsonify({
@@ -283,9 +298,27 @@ def appeal():
     })
 
 
-def _refuse(creator_id: str, reason: str, message: str, status: int):
+def _elapsed_ms(started: float) -> float:
+    return round((time.perf_counter() - started) * 1000, 1)
+
+
+def _model_signal_with_timeout(detector, text: str) -> float:
+    """
+    Signal one, with a ceiling on how long it may take.
+
+    The model holds the request while it scores, so a slow or wedged load would
+    otherwise hang the caller with no record of why.
+    """
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(detector.model_signal, text)
+        return future.result(timeout=config.DETECTOR_TIMEOUT_SECONDS)
+
+
+def _refuse(creator_id: str, reason: str, message: str, status: int,
+            started: float | None = None):
     """A request that never became a decision still leaves a trace."""
-    audit.log_rejection(creator_id=creator_id, reason=reason)
+    audit.log_rejection(creator_id=creator_id, reason=reason,
+                        latency_ms=_elapsed_ms(started) if started else None)
     return jsonify({"error": reason, "message": message}), status
 
 
