@@ -1157,3 +1157,367 @@ Out of scope, deliberately:
 
 Path B, local with logs. The start command, the environment it needs and the
 model's size are in [RUNNING.md](RUNNING.md) under **Capstone — the run path**.
+
+**Instrumentation**
+
+Every request writes one line to `logs/audit.jsonl` through `audit.py`, and this
+unit added two fields to it. `latency_ms` is on every record, measured in
+`app.py::_elapsed_ms` from the moment the route is entered, and `scored_length`
+says how much of the submission survived the scrub so a stripped input is
+visible afterwards rather than inferred.
+
+A decided record holds timestamp, content id, creator id, guess, both signal
+scores, the combined score, the label text, status, the submitted length, the
+scored length and the latency. A refused record holds timestamp, creator id,
+event, status, the reason that refused it and the latency. The refusals carry
+fewer fields because no decision was made, and that is the point of having them.
+
+```json
+[
+  {
+    "timestamp": "2026-11-17T04:35:06+00:00",
+    "content_id": "9d3f11fea2a8",
+    "creator_id": "c4_t3_s17",
+    "guess": "human",
+    "model_score": 0.3692,
+    "style_score": 0.0,
+    "combined_score": 0.1292,
+    "label": "This reads like your own writing to us, and there is nothing further you need to do.",
+    "status": "decided",
+    "text_length": 594,
+    "scored_length": 594,
+    "latency_ms": 42.2
+  },
+  {
+    "timestamp": "2026-11-17T04:35:06+00:00",
+    "content_id": "a6136c12503a",
+    "creator_id": "c4_t3_s18",
+    "guess": "unsure",
+    "model_score": 0.3126,
+    "style_score": 0.7291,
+    "combined_score": 0.4584,
+    "label": "We cannot tell whether this was written by a person or by AI, so we are not making a call either way. This is not an accusation and it does not count against you. If you want it looked at by a person, you can ask.",
+    "status": "decided",
+    "text_length": 616,
+    "scored_length": 614,
+    "latency_ms": 42.2
+  },
+  {
+    "timestamp": "2026-11-17T04:35:06+00:00",
+    "content_id": "eb99ce718e17",
+    "creator_id": "c4_t3_s19",
+    "guess": "human",
+    "model_score": 0.368,
+    "style_score": 0.1693,
+    "combined_score": 0.2885,
+    "label": "This reads like your own writing to us, and there is nothing further you need to do.",
+    "status": "decided",
+    "text_length": 479,
+    "scored_length": 479,
+    "latency_ms": 36.0
+  },
+  {
+    "timestamp": "2026-11-17T04:35:06+00:00",
+    "content_id": "8b7373cae047",
+    "creator_id": "c5_t3_0",
+    "guess": "unsure",
+    "model_score": 0.7785,
+    "style_score": 0.8186,
+    "combined_score": 0.7945,
+    "label": "We cannot tell whether this was written by a person or by AI, so we are not making a call either way. This is not an accusation and it does not count against you. If you want it looked at by a person, you can ask.",
+    "status": "decided",
+    "text_length": 649,
+    "scored_length": 649,
+    "latency_ms": 36.5
+  },
+  {
+    "timestamp": "2026-11-17T04:35:06+00:00",
+    "content_id": "b7c62f7a4e31",
+    "creator_id": "c5_t3_1",
+    "guess": "human",
+    "model_score": 0.46,
+    "style_score": 0.2001,
+    "combined_score": 0.356,
+    "label": "This reads like your own writing to us, and there is nothing further you need to do.",
+    "status": "decided",
+    "text_length": 574,
+    "scored_length": 574,
+    "latency_ms": 38.2
+  },
+  {
+    "timestamp": "2026-11-17T04:35:06+00:00",
+    "content_id": "808b63bd6c47",
+    "creator_id": "c5_t3_2",
+    "guess": "human",
+    "model_score": 0.3353,
+    "style_score": 0.4739,
+    "combined_score": 0.3907,
+    "label": "This reads like your own writing to us, and there is nothing further you need to do.",
+    "status": "decided",
+    "text_length": 554,
+    "scored_length": 554,
+    "latency_ms": 38.6
+  },
+  {
+    "timestamp": "2026-11-17T04:35:06+00:00",
+    "content_id": "6174084b0e39",
+    "creator_id": "c5_t3_3",
+    "guess": "unsure",
+    "model_score": 0.5765,
+    "style_score": 0.2727,
+    "combined_score": 0.455,
+    "label": "We cannot tell whether this was written by a person or by AI, so we are not making a call either way. This is not an accusation and it does not count against you. If you want it looked at by a person, you can ask.",
+    "status": "decided",
+    "text_length": 622,
+    "scored_length": 620,
+    "latency_ms": 39.2
+  },
+  {
+    "timestamp": "2026-11-17T04:35:06+00:00",
+    "creator_id": "c4_t3_r8",
+    "event": "rejected",
+    "status": "rejected",
+    "reason": "not_enough_distinct_words",
+    "latency_ms": 0.1
+  },
+  {
+    "timestamp": "2026-11-17T04:35:06+00:00",
+    "creator_id": "c4_t3_r9",
+    "event": "rejected",
+    "status": "rejected",
+    "reason": "not_enough_distinct_words",
+    "latency_ms": 0.1
+  },
+  {
+    "timestamp": "2026-11-17T04:34:55+00:00",
+    "creator_id": "probe_after",
+    "event": "rejected",
+    "status": "rejected",
+    "reason": "not_mostly_text",
+    "latency_ms": 0.1
+  }
+]
+```
+
+The last three are failed runs. Two were refused by the distinct-word rule and
+one by the alphabetic-ratio rule, and all three are in the log with a reason and
+a timing, which is what this unit was for. The old service recorded refusals but
+not how long they took, so a slow refusal was invisible.
+
+**What It Costs**
+
+Nothing here calls a hosted service, so a run costs seconds of local compute
+rather than money. No account, no key, no card, and the only network traffic is
+the one-time 550 MB model download.
+
+Measured with `measure_cost.py`, which discards one warm-up submission and then
+times ten real ones end to end from a separate process:
+
+| | |
+|---|---|
+| Scored run, mean wall time | **53.0 ms** |
+| Scored run, min and max | 45.6 ms and 66.2 ms |
+| Scored run, standard deviation | 7.0 ms |
+| Server-side time on the same runs | 51.5 ms |
+| Guarded refusal, mean wall time | **1.0 ms** |
+| Guarded refusal, max | 1.6 ms |
+
+How I got it. `measure_cost.py` wraps each POST in `time.perf_counter()` and
+also reads the `latency_ms` the service puts in its own response, so the client
+number and the server number can be compared. They agree to within 1.5 ms,
+which says the measurement is the work and not the HTTP round trip. The warm-up
+submission is discarded on purpose, because the first call of a process loads
+gpt2 and takes ten seconds or more, and averaging that into ten runs would
+report the cost of starting the service rather than the cost of using it. The
+pricing-page number for this would be zero dollars and would tell nobody
+anything.
+
+The refusal number is the one that justifies the extension. A refusal costs
+1.0 ms against 53.0 ms for a scored run, so turning junk away before the model
+sees it is about 53 times cheaper than answering it.
+
+**A hundred people a day.** Say each person submits three pieces, which is 300
+runs. 300 × 53.0 ms = 15.9 seconds of compute a day, or about 8 minutes a
+month. On a laptop that is free and on a rented box it is rounding error. The
+real cost of running this for a hundred people is not compute at all, it is the
+roughly 1 GB of memory the model holds resident whether anybody is submitting or
+not, and the person who has to read the appeals.
+
+**Run Log and Verdicts**
+
+`python capstone_eval.py --label before`, three trials. Full output in
+`results/capstone_before.json`.
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| C1. Guard refuses every non-prose input | 12 of 12 | 12/12 | 12/12 | 12/12 | MET |
+| C2. Guard never refuses real writing | 0 of 20 | 0/20 | 0/20 | 0/20 | MET |
+| C3. Refusal costs under 5% of a scored run | < 0.05 | 0.0177 | 0.0210 | 0.0186 | MET |
+| C4. Every run leaves a timed record | 30 of 30 | 30/30 | 30/30 | 30/30 | MET |
+| C5. The extension changed no score | 4 of 4 | 4/4 | 4/4 | 4/4 | MET |
+
+**Real output, C3**, from `capstone_eval.py::c3`:
+
+```json
+{
+  "scored_mean_ms": 48.3,
+  "refused_mean_ms": 0.9,
+  "ratio": 0.01774
+}
+```
+
+**A correction I made before reaching a verdict.** The first version of
+`capstone_eval.py::real_paragraphs` returned 15 paragraphs, not the 20 my
+criterion named, because it took only 5 human comments from `scenarios.py`
+instead of 10. That made C2 report 0 of 15 and C4 report 25 of 30, and the C4
+number looked like a service failure when it was five requests I never sent. I
+added five more comments from the same source, re-ran all three trials, and the
+numbers above are from the corrected runner. I changed the test to match the
+criterion rather than the criterion to match the test, and the first run is
+still in the commit history.
+
+**Diagnoses**
+
+All five were met, so there is no miss to diagnose, and that is itself the
+finding worth writing down. Three of the five were set too low.
+
+C1 and C2 are the two I would tighten. Both passed at full marks on every trial
+and neither was ever close, because the inputs I chose for C1 all fail the same
+rule. Every one of the twelve has fewer than 25 distinct words, so the
+distinct-word rule refused all twelve and the alphabetic-ratio rule was never
+the thing that fired. I wrote two rules and tested one. **I would tighten C1 to
+require that at least 3 of the 12 inputs are refused by the ratio rule
+specifically**, which would have forced me to build inputs with real vocabulary
+and heavy padding, and that is exactly the case I later found by hand.
+
+C5 is the third. Asking that four scores not move is a check that the guard did
+nothing to clean inputs, and clean inputs were never the risk.
+
+**The weakness the criteria could not see.** With all five met, I went looking by
+hand, and found that a genuine human paragraph with 120 emoji appended scored
+0.6495 instead of 0.3907. It passed the gate at an alphabetic ratio of 0.806,
+just over my 0.80 line. The stage is the guard and the mechanism is that it was
+built as accept-or-reject on the whole submission, so anything that stayed under
+the threshold went through into both signals unchanged, and emoji move the style
+signal because it counts punctuation and sentence shape without reading
+anything. Appending emoji to somebody else's published work is a one-line way to
+push them from cleared into the unsure band.
+
+**The Improvement**
+
+What I changed: one thing, in `guard.py`. The gate now scrubs non-prose
+characters and the route scores the scrubbed text, instead of accepting or
+rejecting the submission whole. That is `guard.scrub`, called from
+`app.py::submit` before `guard.check`, with the result passed to both signals.
+
+Which diagnosis pointed at it: the emoji finding directly. The hole was that
+padding under the threshold reached the signals, so the fix is to stop handing
+the signals anything that is not writing.
+
+`python capstone_eval.py --label after`, three trials, in
+`results/capstone_after.json`.
+
+| Criterion | Target | Before | After |
+|---|---|---|---|
+| C1. Guard refuses every non-prose input | 12 of 12 | 12/12 MET | 12/12 MET |
+| C2. Guard never refuses real writing | 0 of 20 | 0/20 MET | 0/20 MET |
+| C3. Refusal costs under 5% of a scored run | < 0.05 | 0.0177 MET | 0.0184 MET |
+| C4. Every run leaves a timed record | 30 of 30 | 30/30 MET | 30/30 MET |
+| C5. The extension changed no score | 4 of 4 | 4/4 MET | **3/4 MISSED** |
+
+Did it help? It closed the hole it was aimed at and it broke a criterion, so the
+answer is yes with a cost I did not predict.
+
+The emoji case now scores 0.3907, which is identical to the same paragraph
+without the emoji, so padding no longer reaches the signals at all. That was the
+goal and it works.
+
+C5 went from MET to MISSED on all three trials, and the cause is one character:
+
+```json
+[
+  {
+    "input": "clearly AI",
+    "confidence": 0.7945,
+    "unit8": 0.7945
+  },
+  {
+    "input": "clearly human",
+    "confidence": 0.356,
+    "unit8": 0.356
+  },
+  {
+    "input": "plain conventional human",
+    "confidence": 0.3907,
+    "unit8": 0.3907
+  },
+  {
+    "input": "lightly-edited AI",
+    "confidence": 0.455,
+    "unit8": 0.2953
+  }
+]
+```
+
+The lightly-edited AI input moved from 0.2953 to 0.4550, a swing of 0.1597 that
+takes it from `human` to `unsure`. My keep-set lists ASCII punctuation and the em
+dash is not ASCII, so the scrub removed a real punctuation mark that a writer had
+typed. The style signal counts punctuation variety, so losing the dash lowered
+the human-looking evidence and the score rose.
+
+The irony is worth stating plainly. That input is generated text with a few edits
+applied to evade detection, so moving it from `human` to `unsure` is the service
+getting *less* wrong. It is still a regression, because the thing C5 was
+protecting is the claim that the guard does not touch scoring, and that claim is
+now false. A fix that accidentally improves detection by mangling punctuation is
+not a fix I can defend, and the next person to paste an em dash is a real writer.
+
+**What's Still Broken**
+
+**The keep-set is ASCII-only, and that is the first thing I would do next.** The
+em dash is the one that showed up, and curly quotes, ellipses and en dashes are
+all in the same category, which means the scrub is quietly editing anybody who
+writes in a word processor rather than a code editor. The fix is to keep the
+Unicode punctuation category instead of listing characters, which is a one-line
+change to `guard.KEEP`, and then re-run C5. I stopped because this unit allows
+one change and I had already spent it, and shipping a second change would have
+made the before and after above compare two different systems.
+
+**C1 is too easy and I would raise it rather than leave it.** As written, twelve
+inputs test one of my two rules. The target I would set is that at least 3 of the
+12 are refused by the ratio rule specifically.
+
+**The style signal is still wrong about me.** Unit 8 measured it at 0.8332 to
+0.9435 on all ten paragraphs of my own writing, so it has never once been right
+about my prose. Nothing in this unit touched it, on purpose, and nothing in this
+unit fixed it.
+
+**The one thing I'd do first if this were real and I had another unit.** Not the
+em dash, even though it is a one-liner. I would rebuild the style signal around
+something other than sentence rhythm, because every failure across the last two
+units traces back to it, and a service whose second opinion is wrong on every
+piece of real writing is only ever one threshold away from accusing somebody.
+
+**How I Used AI**
+
+- *What I asked for:* I described this extension as a plan and asked for it to be
+  broken into the separate pieces of work it actually contained, with a count,
+  and explicitly not to be told whether it was achievable or offered a smaller
+  version.
+- *What came back:* four pieces, which were the prose gate, the detector timeout,
+  the latency field on the log records, and the cost measurement.
+- *What I changed:* I kept all four but stopped calling them one thing. The
+  README now says the shape is the bad path and names the gate as the extension,
+  with the timeout, the timing and the cost measurement as the operational layer
+  every shape has to carry. Counting them was what made me write the out-of-scope
+  list, and the retry idea got cut there.
+
+- *What I asked for:* I pasted the input that scored 0.6495, what the service
+  returned, and both signal scores, and asked for three possible causes at
+  different stages without being told which was likeliest.
+- *What came back:* the gate letting it through, the style signal reacting to the
+  emoji, and the combining rule weighting style too heavily.
+- *What I changed:* I checked which it was by scoring the same paragraph scrubbed
+  and unscrubbed, which isolated the gate, and that is the change I made. The
+  third cause was a real option and I rejected it on purpose, because reweighting
+  the signals is the thing I put out of scope in Milestone 1.

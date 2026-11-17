@@ -1,0 +1,356 @@
+{
+  "label": "after",
+  "trials": {
+    "1": {
+      "C1": {
+        "measure": "12/12",
+        "detail": [
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          }
+        ]
+      },
+      "C2": {
+        "measure": "0/20",
+        "detail": []
+      },
+      "C3": {
+        "measure": 0.01836,
+        "detail": {
+          "scored_mean_ms": 42.7,
+          "refused_mean_ms": 0.8,
+          "ratio": 0.01836
+        }
+      },
+      "C4": {
+        "measure": "30/30",
+        "detail": {
+          "entries_found": 30,
+          "entries_with_latency": 30,
+          "sample": [
+            {
+              "timestamp": "2026-11-17T04:35:02+00:00",
+              "creator_id": "c4_t1_r8",
+              "event": "rejected",
+              "status": "rejected",
+              "reason": "not_enough_distinct_words",
+              "latency_ms": 0.1
+            },
+            {
+              "timestamp": "2026-11-17T04:35:02+00:00",
+              "creator_id": "c4_t1_r9",
+              "event": "rejected",
+              "status": "rejected",
+              "reason": "not_enough_distinct_words",
+              "latency_ms": 0.1
+            }
+          ]
+        }
+      },
+      "C5": {
+        "measure": "3/4",
+        "detail": [
+          {
+            "input": "clearly AI",
+            "confidence": 0.7945,
+            "unit8": 0.7945
+          },
+          {
+            "input": "clearly human",
+            "confidence": 0.356,
+            "unit8": 0.356
+          },
+          {
+            "input": "plain conventional human",
+            "confidence": 0.3907,
+            "unit8": 0.3907
+          },
+          {
+            "input": "lightly-edited AI",
+            "confidence": 0.455,
+            "unit8": 0.2953
+          }
+        ]
+      }
+    },
+    "2": {
+      "C1": {
+        "measure": "12/12",
+        "detail": [
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          }
+        ]
+      },
+      "C2": {
+        "measure": "0/20",
+        "detail": []
+      },
+      "C3": {
+        "measure": 0.02062,
+        "detail": {
+          "scored_mean_ms": 44.4,
+          "refused_mean_ms": 0.9,
+          "ratio": 0.02062
+        }
+      },
+      "C4": {
+        "measure": "30/30",
+        "detail": {
+          "entries_found": 30,
+          "entries_with_latency": 30,
+          "sample": [
+            {
+              "timestamp": "2026-11-17T04:35:04+00:00",
+              "creator_id": "c4_t2_r8",
+              "event": "rejected",
+              "status": "rejected",
+              "reason": "not_enough_distinct_words",
+              "latency_ms": 0.1
+            },
+            {
+              "timestamp": "2026-11-17T04:35:04+00:00",
+              "creator_id": "c4_t2_r9",
+              "event": "rejected",
+              "status": "rejected",
+              "reason": "not_enough_distinct_words",
+              "latency_ms": 0.1
+            }
+          ]
+        }
+      },
+      "C5": {
+        "measure": "3/4",
+        "detail": [
+          {
+            "input": "clearly AI",
+            "confidence": 0.7945,
+            "unit8": 0.7945
+          },
+          {
+            "input": "clearly human",
+            "confidence": 0.356,
+            "unit8": 0.356
+          },
+          {
+            "input": "plain conventional human",
+            "confidence": 0.3907,
+            "unit8": 0.3907
+          },
+          {
+            "input": "lightly-edited AI",
+            "confidence": 0.455,
+            "unit8": 0.2953
+          }
+        ]
+      }
+    },
+    "3": {
+      "C1": {
+        "measure": "12/12",
+        "detail": [
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          },
+          {
+            "status": 400,
+            "reason": "not_enough_distinct_words"
+          }
+        ]
+      },
+      "C2": {
+        "measure": "0/20",
+        "detail": []
+      },
+      "C3": {
+        "measure": 0.01998,
+        "detail": {
+          "scored_mean_ms": 44.5,
+          "refused_mean_ms": 0.9,
+          "ratio": 0.01998
+        }
+      },
+      "C4": {
+        "measure": "30/30",
+        "detail": {
+          "entries_found": 30,
+          "entries_with_latency": 30,
+          "sample": [
+            {
+              "timestamp": "2026-11-17T04:35:06+00:00",
+              "creator_id": "c4_t3_r8",
+              "event": "rejected",
+              "status": "rejected",
+              "reason": "not_enough_distinct_words",
+              "latency_ms": 0.1
+            },
+            {
+              "timestamp": "2026-11-17T04:35:06+00:00",
+              "creator_id": "c4_t3_r9",
+              "event": "rejected",
+              "status": "rejected",
+              "reason": "not_enough_distinct_words",
+              "latency_ms": 0.1
+            }
+          ]
+        }
+      },
+      "C5": {
+        "measure": "3/4",
+        "detail": [
+          {
+            "input": "clearly AI",
+            "confidence": 0.7945,
+            "unit8": 0.7945
+          },
+          {
+            "input": "clearly human",
+            "confidence": 0.356,
+            "unit8": 0.356
+          },
+          {
+            "input": "plain conventional human",
+            "confidence": 0.3907,
+            "unit8": 0.3907
+          },
+          {
+            "input": "lightly-edited AI",
+            "confidence": 0.455,
+            "unit8": 0.2953
+          }
+        ]
+      }
+    }
+  }
+}
