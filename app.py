@@ -200,14 +200,17 @@ def submit():
             413, started,
         )
 
-    ok, reason, message = guard.check(text)
+    # Scrub before checking, and score the scrubbed text. Padding that stays
+    # under the ratio threshold used to pass straight through into the signals.
+    scored_text = guard.scrub(text)
+    ok, reason, message = guard.check(scored_text)
     if not ok:
         return _refuse(creator_id, reason, message, 400, started)
 
     content_id = uuid.uuid4().hex[:12]
 
     try:
-        model_score = _model_signal_with_timeout(detector, text)
+        model_score = _model_signal_with_timeout(detector, scored_text)
     except (detector.DetectorUnavailable, concurrent.futures.TimeoutError) as exc:
         reason = ("detector_timeout"
                   if isinstance(exc, concurrent.futures.TimeoutError)
@@ -222,7 +225,7 @@ def submit():
                        "against you. Try again shortly.",
         }), 503
 
-    style_score = stylometry.style_signal(text)
+    style_score = stylometry.style_signal(scored_text)
     combined = scoring.combine_signals(model_score, style_score)
     guess, label = scoring.score_to_label(combined)
 
@@ -235,6 +238,7 @@ def submit():
         combined_score=combined,
         label=label,
         text_length=len(text),
+        scored_length=len(scored_text),
         latency_ms=_elapsed_ms(started),
     )
 

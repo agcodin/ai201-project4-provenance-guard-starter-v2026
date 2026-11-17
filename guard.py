@@ -19,6 +19,11 @@ import config
 
 WORD = re.compile(r"[a-z][a-z']*")
 
+# What belongs in prose. Letters, digits, whitespace and the punctuation a
+# writer actually types. Everything else is padding as far as the signals are
+# concerned, and the signals cannot tell the difference on their own.
+KEEP = re.compile(r"[^\w\s.,;:!?'\"()\[\]{}<>/\\|@#$%^&*+=~`_-]", re.UNICODE)
+
 
 def distinct_words(text: str) -> int:
     """How many different word-like tokens the text uses."""
@@ -31,6 +36,19 @@ def alphabetic_ratio(text: str) -> float:
         return 0.0
     counted = sum(1 for ch in text if ch.isalpha() or ch.isspace())
     return counted / len(text)
+
+
+def scrub(text: str) -> str:
+    """
+    Drop characters that are not part of writing, and collapse the whitespace
+    that removing them leaves behind.
+
+    The gate used to be accept-or-reject on the whole text, which meant padding
+    that stayed under the ratio threshold went straight through into both
+    signals. 120 emoji appended to a real paragraph moved its score from 0.3907
+    to 0.6495 without changing a word the writer typed.
+    """
+    return re.sub(r"\s+", " ", KEEP.sub(" ", text)).strip()
 
 
 def check(text: str) -> tuple[bool, str, str]:
