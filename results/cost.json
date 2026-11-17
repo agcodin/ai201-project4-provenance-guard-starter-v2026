@@ -1,0 +1,10 @@
+{
+  "runs": 10,
+  "scored_wall_ms_mean": 53.0,
+  "scored_wall_ms_min": 45.6,
+  "scored_wall_ms_max": 66.2,
+  "scored_wall_ms_stdev": 7.0,
+  "scored_server_ms_mean": 51.5,
+  "refused_wall_ms_mean": 1.0,
+  "refused_wall_ms_max": 1.6
+}

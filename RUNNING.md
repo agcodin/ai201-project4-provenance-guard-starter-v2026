@@ -306,3 +306,67 @@ is evidence, and the entries you paste into your README are what unit 8 grades.
 
 **Do not delete and recreate this repository.** You submit the same URL both
 units.
+
+
+---
+
+## Capstone — the run path
+
+**Path B, local with logs.** Hosting this is arithmetic rather than preference,
+and the numbers are in the section above. gpt2 is about 550 MB on disk and has
+to be in memory to score anything, torch is another 200 to 800 MB, and a free
+tier gives 512 MB. There is no configuration that fits.
+
+### The single command
+
+From a clean checkout:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python detector.py                 # one-time, downloads ~550 MB
+python app.py
+```
+
+`python app.py` is the start command. Everything above it is the one-time setup,
+and `python test.py` checks all of it before you start.
+
+### What the environment needs
+
+| | |
+|---|---|
+| Python | 3.11, 3.12 or 3.13. Not 3.14, and not 3.9 |
+| Dependencies | `requirements.txt`, pinned with upper and lower bounds |
+| Model | `gpt2`, about 550 MB, downloaded on the first `python detector.py` |
+| Memory | roughly 1 GB resident once the model is loaded |
+| Disk | about 2 GB for the venv, torch and the model together |
+| Network | only for the first model download. Nothing calls out at request time |
+| Keys | none. No account, no card |
+
+### Proving it runs
+
+```bash
+curl -X POST http://127.0.0.1:5000/ping -H "Content-Type: application/json" -d '{"message": "hello"}'
+curl http://127.0.0.1:5000/health
+curl "http://127.0.0.1:5000/log?limit=10"
+```
+
+`/health` reports whether the model is loaded and whether rate limiting is on.
+The committed run record is `logs/audit.jsonl`, and ten entries from a real
+session are pasted into the README under **Instrumentation**.
+
+### What I hit testing these instructions on myself
+
+I cloned the repo into a new folder and followed the block above. The first
+failure was Python. The system `python3` on this machine is 3.9.6 and `test.py`
+refuses anything below 3.11, so the venv has to be built against a newer
+interpreter. That is now the first row of the table rather than an assumption.
+
+### Running the capstone's own tools
+
+```bash
+python guard.py "some text"            # the prose check, on one input
+python measure_cost.py                 # ten timed runs, writes results/cost.json
+python capstone_eval.py                # the five capstone criteria, three trials
+```

@@ -245,6 +245,7 @@ def submit():
         "label": label,
         "model_score": model_score,
         "style_score": style_score,
+        "latency_ms": _elapsed_ms(started),
         "appeal": {
             "route": "/appeal",
             "how": "Send content_id and your reasoning to have a person look at it.",
