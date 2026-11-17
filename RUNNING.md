@@ -369,4 +369,5 @@ interpreter. That is now the first row of the table rather than an assumption.
 python guard.py "some text"            # the prose check, on one input
 python measure_cost.py                 # ten timed runs, writes results/cost.json
 python capstone_eval.py                # the five capstone criteria, three trials
+python probe_padding.py                # the padding probe that found the emoji hole
 ```
