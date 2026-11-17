@@ -156,3 +156,74 @@ mislabelling one of them.
      A number you missed stays where it is, gets diagnosed, and gets a fix
      attempted. That's where the points are.
      ───────────────────────────────────────────────────────────────────────── -->
+
+---
+
+# Capstone criteria
+
+Five criteria for the guard layer, written before it was tested. Three of the
+five are about the extension, one is about the instrumentation it added, and one
+is a regression check on the service it sits in front of.
+
+## C1. The guard refuses every non-prose input
+
+Of 12 inputs that are not writing, which are one word repeated, a wall of emoji,
+symbols only, a single character repeated, whitespace padding around two words,
+and variants of those, all 12 come back as a 4xx with a `reason` naming which
+guard rule refused them. 12 of 12, on all three trials.
+
+**Why this target:** this is the whole reason the layer exists, and the two
+inputs that prompted it both got confident answers out of the old service. A
+partial pass here means some junk still reaches the model and gets a verdict,
+and a verdict on text nobody wrote is worse than a refusal, because it goes in
+the log attached to a creator id. I am requiring all 12 rather than most because
+I wrote both rules and I should be able to say which inputs they cover.
+
+## C2. The guard never refuses real writing
+
+Of 20 real paragraphs, which are the 10 of my own from unit 8 plus 10 human
+forum comments, 0 are refused by the guard. 0 of 20, on all three trials.
+
+**Why this target:** a false refusal is worse than a false accusation, because
+the writer does not even get a decision to appeal. The appeal path is the thing
+I argued protects people in unit 7, and a guard refusal never reaches it. Zero
+is the only defensible number for a check that stands between a writer and
+being read at all, and 25 distinct words is a low enough bar that any real
+paragraph should clear it.
+
+## C3. A refusal costs under a twentieth of a scored run
+
+The mean wall time of 10 guarded refusals is under 5% of the mean wall time of
+10 scored submissions. Holds on all three trials.
+
+**Why this target:** the argument for a gate in front of the model is that
+refusing is cheap and scoring is not. If a refusal costs anything close to a
+scored run then the gate is not buying anything except a different error
+message, and I would rather know that than assume it. 5% is the line where the
+gate is plainly doing work, and it is measured as wall time because that is
+what a caller experiences.
+
+## C4. Every run leaves a timed record, including the failures
+
+Across a session of 30 requests, of which 20 are scored and 10 are refused, all
+30 appear in `logs/audit.jsonl` and all 30 carry a `latency_ms` field. 30 of 30,
+on all three trials.
+
+**Why this target:** a request that leaves no trace is one I cannot diagnose
+later, and unit 8 is the reason I believe that rather than the reason I say it.
+Refusals are the half that goes missing, because nothing downstream touches
+them, so counting only the scored runs would hide exactly the records this unit
+added. The timing field has to be on every record and not just the successful
+ones, because a slow refusal is a thing I would want to find.
+
+## C5. The extension changed no score
+
+The four calibration inputs score within 0.0001 of their unit 8 values, which
+are 0.7945, 0.3560, 0.3907 and 0.2953. 4 of 4, on all three trials.
+
+**Why this target:** the guard sits in front of the signals and is supposed to
+decide only whether they run, not what they say. If a score moves then I have
+changed the system I am measuring and the before and after in this unit compare
+two different things. The tolerance is 0.0001 rather than an exact match because
+the scores are rounded to four places, and anything looser would let a real
+change hide inside it.
