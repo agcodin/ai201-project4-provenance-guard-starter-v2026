@@ -52,6 +52,18 @@ DETECTOR_MAX_TOKENS = 400
 MIN_TEXT_CHARS = 120
 MAX_TEXT_CHARS = 20000
 
+# ─── The guard layer (capstone) ──────────────────────────────────────────────
+# Length said nothing about whether a submission is prose. One word repeated to
+# 4,000 characters cleared the floor above and came back as high-confidence AI.
+#
+# 25 distinct words is roughly two sentences of ordinary writing, and 0.80 keeps
+# a paragraph with normal punctuation while refusing a wall of symbols.
+MIN_DISTINCT_WORDS = 25
+MIN_ALPHABETIC_RATIO = 0.80
+
+# How long signal one gets before the route gives up on it and answers anyway.
+DETECTOR_TIMEOUT_SECONDS = 20.0
+
 
 # ─── Scoring (Milestone 4) ───────────────────────────────────────────────────
 # How much each signal counts toward the combined score.
