@@ -1104,3 +1104,56 @@ is the same system with extra steps.
 ---
 
 📖 **How to run this project: [RUNNING.md](RUNNING.md)**
+
+---
+
+## Capstone
+
+**What This Extends**
+
+Provenance Guard, the service from projects 7 and 8, in the same repository. What
+is new is a guard layer that sits in front of the two signals and decides whether
+a submission is scoreable at all, plus timing on every log record so a run can be
+measured rather than described.
+
+Unit 8's **What's Still Broken** named this as the next thing to do. Two attacks,
+MF05 and MF06, came back with confident decisions on text that is not writing.
+MF05 was one word repeated until it filled 4,000 characters and it was labelled
+high-confidence AI at 0.959. MF06 was a body of emoji and it came back unsure.
+Both passed my old length check, because 4,000 characters of one word and a wall
+of emoji are both longer than 120 characters, and a length check is the only
+thing that stood between them and the model.
+
+The guard answers one question before any scoring happens, which is whether this
+input is prose. It lives in `guard.py` as a single function called once from
+`app.py::submit`, and a refusal writes a record saying which rule refused it.
+
+**The Shape**
+
+Shape B, harden against failure. The extension is the bad path, so the criteria
+are mostly about what the service does with input it should not score and with a
+detector that will not answer.
+
+The guard covers three ways a submission can be unscoreable rather than merely
+short. Too few distinct words, too little alphabetic content, and a detector that
+raises instead of returning. The first two are refusals and the third is a
+degraded answer, and all three leave a log record.
+
+Out of scope, deliberately:
+
+- I am not touching the scoring. No weights, no thresholds, no new signals.
+  Unit 8's diagnosis says my style signal is wrong on every piece of my own
+  writing, and fixing that is a bigger job than a unit and would make the before
+  and after of this unit incomparable.
+- I am not adding retries. A retry around a local model that failed to load
+  would fail the same way a second time, so it would buy latency and nothing
+  else.
+- I am not hosting it. The service loads gpt2 into memory, which `RUNNING.md`
+  already works out at more than a free tier's 512 MB before a single request
+  arrives, so this is Path B and that was decided before I started rather than
+  after a host fought me.
+
+**Running It**
+
+Path B, local with logs. The start command, the environment it needs and the
+model's size are in [RUNNING.md](RUNNING.md) under **Capstone — the run path**.
